@@ -15,6 +15,7 @@ const ECOSchema = new mongoose.Schema({
     }],
 
     versionUpdate: { type: Boolean, default: true },
+    status: { type: String, enum: ['Draft', 'Active', 'Completed'], default: 'Draft' },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 

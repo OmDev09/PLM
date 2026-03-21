@@ -4,6 +4,7 @@ import { Menu, Search, UserCircle, FileText, Database, Settings as SettingsIcon,
 import ECOList from '../components/ECOList';
 import ProductList from '../components/ProductList';
 import ECOResport from '../components/ECOResport';
+import DashboardOverview from '../components/DashboardOverview';
 
 import BoMList from '../components/BoMList';
 
@@ -12,28 +13,30 @@ import Settings from './Settings';
 const UnifiedDashboard = () => {
     const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeMenu, setActiveMenu] = useState('ecos');
+    const [activeMenu, setActiveMenu] = useState('dashboard');
     const [masterExpanded, setMasterExpanded] = useState(true);
     const [settingsExpanded, setSettingsExpanded] = useState(false);
 
     const renderContent = () => {
         switch (activeMenu) {
+            case 'dashboard': return <DashboardOverview setActiveMenu={setActiveMenu} />;
             case 'ecos': return <ECOList />;
             case 'products': return <ProductList />;
             case 'boms': return <BoMList />;
             case 'reporting': return <ECOResport />;
             case 'settings': return <Settings />;
-            default: return <ECOList />;
+            default: return <DashboardOverview setActiveMenu={setActiveMenu} />;
         }
     };
 
     const menuTitle = {
+        'dashboard': 'System Overview',
         'ecos': 'Engineering Change Orders (ECOs)',
         'products': 'Master Data / Products',
         'boms': 'Master Data / Bills of Materials',
         'reporting': 'System Reporting',
         'settings': 'Workflow Graph & Pipeline Configuration'
-    }[activeMenu];
+    }[activeMenu] || 'System Overview';
 
     return (
         <div className="flex h-screen bg-gray-50 text-slate-900 font-sans overflow-hidden">
@@ -46,6 +49,13 @@ const UnifiedDashboard = () => {
 
                 <div className="flex-1 overflow-y-auto py-4">
                     <nav className="space-y-1.5 px-3 shadow-sm-light">
+                        <button
+                            onClick={() => setActiveMenu('dashboard')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${activeMenu === 'dashboard' ? 'bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium border border-transparent'}`}
+                        >
+                            <Activity size={18} className={activeMenu === 'dashboard' ? 'text-blue-600' : 'text-slate-400'} /> System Overview
+                        </button>
+
                         <button
                             onClick={() => setActiveMenu('ecos')}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${activeMenu === 'ecos' ? 'bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium border border-transparent'}`}
