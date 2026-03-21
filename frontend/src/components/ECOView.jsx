@@ -50,7 +50,13 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
     if (loading) return <div className="p-10 text-center text-slate-600 dark:text-slate-400">Loading ECO payload...</div>;
     if (!ecoData) return <div className="p-10 text-center text-red-500">Failed to load ECO data.</div>;
 
-    const { targetCurrent, proposedChanges, stage, signatures, title, type, versionUpdate, status } = ecoData;
+    const { targetCurrent, proposedChanges, stage, signatures, title, type, versionUpdate, status, riskLevel } = ecoData;
+
+    const RiskBadge = ({ level }) => {
+        if (level === 'High') return <span className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 px-2 py-0.5 text-[11px] uppercase tracking-wider font-bold rounded flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> High Risk</span>;
+        if (level === 'Medium') return <span className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[11px] uppercase tracking-wider font-bold rounded flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span> Medium Risk</span>;
+        return <span className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-[11px] uppercase tracking-wider font-bold rounded flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> Low Risk</span>;
+    };
 
     const DiffRow = ({ label, oldVal, newVal, isCurrency }) => {
         const oV = oldVal || 0; const nV = newVal !== undefined ? newVal : oV;
@@ -67,171 +73,125 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
     };
 
     const renderComparison = () => {
-        if (type?.toLowerCase() === 'product') {
-            const oldPrice = targetCurrent?.price || 0;
-            const newPrice = proposedChanges?.price !== undefined ? proposedChanges.price : oldPrice;
-            const oldCost = targetCurrent?.costPrice || 0;
-            const newCost = proposedChanges?.costPrice !== undefined ? proposedChanges.costPrice : oldCost;
+        const DiffField = ({ label, oldVal, newVal, status, isCurrency = false }) => {
+            let bgClass = "bg-white dark:bg-slate-800/20";
+            let borderClass = "border-slate-100 dark:border-white/5";
 
-            const oldAttach = targetCurrent?.attachments || [];
-            const newAttach = proposedChanges?.attachments || [...oldAttach];
-
-            const getColor = (o, n) => {
-                if (n > o) return 'text-green-600 dark:text-emerald-400 font-bold';
-                if (n < o) return 'text-red-500 dark:text-red-400 font-bold';
-                return 'text-slate-800 dark:text-slate-200 font-bold';
-            };
+            if (status === 'added') {
+                bgClass = "bg-green-50/50 dark:bg-emerald-900/10";
+                borderClass = "border-green-200 dark:border-emerald-500/20";
+            } else if (status === 'removed') {
+                bgClass = "bg-red-50/50 dark:bg-red-900/10";
+                borderClass = "border-red-200 dark:border-red-500/20";
+            } else if (status === 'changed') {
+                bgClass = "bg-amber-50/50 dark:bg-amber-900/10";
+                borderClass = "border-amber-200 dark:border-amber-500/20";
+            }
 
             return (
-                <div className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-2xl shadow-lg overflow-hidden transition-all duration-300">
-                    <div className="bg-slate-50 dark:bg-slate-800/60 px-6 py-4 border-b border-slate-200 dark:border-white/10">
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Product Changes</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Comparing updates for: <span className="font-semibold text-slate-700 dark:text-slate-300">{targetCurrent?.name || 'Unknown Product'}</span></p>
+                <div className={`p-4 rounded-xl border ${bgClass} ${borderClass} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors`}>
+                    <div className="flex-1 w-full sm:w-1/3">
+                        <span className="text-[11px] font-bold text-slate-500 tracking-wider uppercase block mb-1.5">{label}</span>
+                        <div className="flex items-center gap-2">
+                            {status === 'added' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-700 dark:bg-emerald-500/20 dark:text-emerald-400 font-bold tracking-wider">NEW</span>}
+                            {status === 'removed' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 font-bold tracking-wider">REMOVED</span>}
+                            {status === 'changed' && <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 font-bold tracking-wider">CHANGED</span>}
+                            {!status || status === 'unchanged' ? <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 font-bold tracking-wider">UNCHANGED</span> : null}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-white/5">
-                        {/* LEFT: Version 2 Proposed */}
-                        <div className="p-6 space-y-6 bg-blue-50/30 dark:bg-blue-900/10 transition-colors">
-                            <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-4">Version 2 (Proposed)</h4>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors shadow-sm dark:shadow-none border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-1">Sales Price</label>
-                                <span className={`text-xl transition-colors ${getColor(oldPrice, newPrice)}`}>${newPrice}</span>
-                            </div>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors shadow-sm dark:shadow-none border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-1">Cost Price</label>
-                                <span className={`text-xl transition-colors ${getColor(oldCost, newCost)}`}>${newCost}</span>
-                            </div>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors shadow-sm dark:shadow-none border border-transparent hover:border-blue-100 dark:hover:border-blue-500/20">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-3">Attachments</label>
-                                {newAttach.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {newAttach.map((a, i) => {
-                                            const isAdded = !oldAttach.includes(a);
-                                            return (
-                                                <li key={i} className={`text-sm flex items-center gap-2 ${isAdded ? 'text-green-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    {a} {isAdded && <span className="px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 tracking-wider">NEW</span>}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                ) : <span className="text-sm text-slate-400 italic">No attachments</span>}
-                            </div>
+                    <div className="flex-1 w-full sm:w-2/3 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30 rounded-lg p-3 border border-slate-100 dark:border-white/5 shadow-inner">
+                        <div className="flex-1 text-center truncate">
+                            <span className="block text-[9px] text-slate-400 uppercase tracking-widest font-semibold mb-1">Original</span>
+                            <span className={`font-mono text-sm ${status === 'removed' ? 'text-red-500 line-through opacity-70' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>{isCurrency ? '$' : ''}{oldVal}</span>
                         </div>
-
-                        {/* RIGHT: Version 1 Current */}
-                        <div className="p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20 transition-colors">
-                            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Version 1 (Current)</h4>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors border border-transparent dark:hover:border-white/5 shadow-sm dark:shadow-none">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-1">Sales Price</label>
-                                <span className="text-xl text-slate-700 dark:text-slate-300 font-mono">${oldPrice}</span>
-                            </div>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors border border-transparent dark:hover:border-white/5 shadow-sm dark:shadow-none">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-1">Cost Price</label>
-                                <span className="text-xl text-slate-700 dark:text-slate-300 font-mono">${oldCost}</span>
-                            </div>
-
-                            <div className="group rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800/50 transition-colors border border-transparent dark:hover:border-white/5 shadow-sm dark:shadow-none">
-                                <label className="text-xs text-slate-500 dark:text-slate-400 tracking-wide uppercase font-semibold block mb-3">Attachments</label>
-                                {oldAttach.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {oldAttach.map((a, i) => {
-                                            const isRemoved = !newAttach.includes(a);
-                                            return (
-                                                <li key={i} className={`text-sm flex items-center gap-2 ${isRemoved ? 'text-red-500 dark:text-red-400 line-through opacity-70' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                    {a} {isRemoved && <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold no-underline tracking-wider">REMOVED</span>}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                ) : <span className="text-sm text-slate-400 italic">No attachments</span>}
-                            </div>
+                        <div className="px-4 text-slate-300 dark:text-slate-600 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                        </div>
+                        <div className="flex-1 text-center truncate">
+                            <span className="block text-[9px] text-slate-400 uppercase tracking-widest font-semibold mb-1">Modified</span>
+                            <span className={`font-mono text-sm font-bold ${status === 'added' ? 'text-green-600 dark:text-emerald-400' : status === 'changed' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}`}>{isCurrency ? '$' : ''}{newVal}</span>
                         </div>
                     </div>
                 </div>
             );
+        };
+
+        if (type?.toLowerCase() === 'product') {
+            const oldPrice = targetCurrent?.price || 0;
+            const newPrice = proposedChanges?.price !== undefined ? proposedChanges.price : oldPrice;
+            const priceStatus = newPrice !== oldPrice ? 'changed' : 'unchanged';
+
+            const oldCost = targetCurrent?.costPrice || 0;
+            const newCost = proposedChanges?.costPrice !== undefined ? proposedChanges.costPrice : oldCost;
+            const costStatus = newCost !== oldCost ? 'changed' : 'unchanged';
+
+            const oldAttach = targetCurrent?.attachments || [];
+            const newAttach = proposedChanges?.attachments || [...oldAttach];
+            const allAttach = Array.from(new Set([...oldAttach, ...newAttach]));
+
+            return (
+                <div className="bg-white dark:bg-slate-800/40 border dark:border-white/10 rounded-2xl p-6 space-y-8 shadow-sm transition-colors">
+                    <div>
+                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 text-sm uppercase tracking-wider">Financial Dimensions</h3>
+                        <div className="space-y-3">
+                            <DiffField label="Sales Price" oldVal={oldPrice} newVal={newPrice} status={priceStatus} isCurrency={true} />
+                            <DiffField label="Cost Price" oldVal={oldCost} newVal={newCost} status={costStatus} isCurrency={true} />
+                        </div>
+                    </div>
+                    {allAttach.length > 0 && (
+                        <div>
+                            <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 text-sm uppercase tracking-wider">Digital Attachments</h3>
+                            <div className="space-y-3">
+                                {allAttach.map(att => {
+                                    const hasOld = oldAttach.includes(att);
+                                    const hasNew = newAttach.includes(att);
+                                    const status = !hasOld ? 'added' : !hasNew ? 'removed' : 'unchanged';
+                                    return <DiffField key={att} label={`Asset: ${att}`} oldVal={hasOld ? att : '-'} newVal={hasNew ? att : '-'} status={status} />;
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         } else {
-            // BoM diffs
             const currComps = targetCurrent.components || [];
             const propComps = proposedChanges?.components || currComps;
-
             const allCompNames = Array.from(new Set([...currComps.map(c => c.name), ...propComps.map(c => c.name)]));
-            const compDiffs = allCompNames.map(name => {
-                const c = currComps.find(x => x.name === name);
-                const p = propComps.find(x => x.name === name);
-                return { name, currQty: c ? c.quantity : '-', propQty: p ? p.quantity : '-', status: !c ? 'added' : !p ? 'removed' : (c.quantity !== p.quantity ? 'changed' : 'unchanged') };
-            });
 
             const currOps = targetCurrent.operations || [];
             const propOps = proposedChanges?.operations || currOps;
             const allOpNames = Array.from(new Set([...currOps.map(o => o.name), ...propOps.map(o => o.name)]));
-            const opDiffs = allOpNames.map(name => {
-                const c = currOps.find(x => x.name === name);
-                const p = propOps.find(x => x.name === name);
-                return { name, currTime: c ? c.timeMinutes : '-', propTime: p ? p.timeMinutes : '-', status: !c ? 'added' : !p ? 'removed' : (c.timeMinutes !== p.timeMinutes ? 'changed' : 'unchanged') };
-            });
 
             return (
-                <div className="bg-white dark:bg-slate-800/40 border dark:border-white/10 rounded-lg p-5 space-y-6 transition-colors">
+                <div className="bg-white dark:bg-slate-800/40 border dark:border-white/10 rounded-2xl p-6 space-y-8 shadow-sm transition-colors">
                     <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2">Components Alignment</h3>
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50"><tr><th className="px-2 py-1">Component</th><th className="px-2 py-1">Current Qty</th><th className="px-2 py-1">Proposed Qty</th></tr></thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {compDiffs.map((d, idx) => {
-                                    let rowClass = "hover:bg-slate-50 dark:hover:bg-slate-800/50";
-                                    let textColor = "text-slate-800 dark:text-slate-200";
-                                    let strike = "";
-                                    let bgHighlight = "";
-                                    if (d.status === 'added') { bgHighlight = "bg-green-50 dark:bg-emerald-900/10"; textColor = "text-green-600 dark:text-emerald-400 font-bold"; }
-                                    else if (d.status === 'removed') { bgHighlight = "bg-red-50 dark:bg-red-900/10"; textColor = "text-red-500 dark:text-red-400 font-bold opacity-70"; strike = "line-through"; }
-                                    else if (d.status === 'changed') { bgHighlight = "bg-amber-50 dark:bg-amber-900/10"; textColor = "text-amber-600 dark:text-amber-400 font-bold"; }
-
-                                    return (
-                                        <tr key={idx} className={`transition-colors ${rowClass} ${bgHighlight}`}>
-                                            <td className={`px-2 py-2 ${textColor} ${strike}`}>
-                                                {d.name} {d.status === 'added' && <span className="text-[10px] ml-2 px-1 rounded-sm bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 font-bold">ADDED</span>}
-                                                {d.status === 'removed' && <span className="text-[10px] ml-2 px-1 rounded-sm bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200 font-bold">REMOVED</span>}
-                                            </td>
-                                            <td className={`px-2 py-2 text-slate-400 dark:text-slate-500 ${strike}`}>{d.currQty}</td>
-                                            <td className={`px-2 py-2 ${textColor}`}>{d.propQty}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 text-sm uppercase tracking-wider flex items-center justify-between">
+                            Components Alignment
+                            <span className="text-[10px] text-slate-400 tracking-normal font-normal normal-case border dark:border-white/10 px-2 py-0.5 rounded-full">{allCompNames.length} Tracked Nodes</span>
+                        </h3>
+                        <div className="space-y-3">
+                            {allCompNames.length > 0 ? allCompNames.map(name => {
+                                const c = currComps.find(x => x.name === name);
+                                const p = propComps.find(x => x.name === name);
+                                const status = !c ? 'added' : !p ? 'removed' : (c.quantity !== p.quantity ? 'changed' : 'unchanged');
+                                return <DiffField key={name} label={`Component: ${name}`} oldVal={c ? c.quantity : '-'} newVal={p ? p.quantity : '-'} status={status} />;
+                            }) : <div className="text-sm text-center text-slate-400 p-4 border border-dashed rounded-xl dark:border-white/10">No components attached</div>}
+                        </div>
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2">Operations Alignment</h3>
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50"><tr><th className="px-2 py-1">Operation</th><th className="px-2 py-1">Old Time (mins)</th><th className="px-2 py-1">New Time (mins)</th></tr></thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {opDiffs.map((d, idx) => {
-                                    let rowClass = "hover:bg-slate-50 dark:hover:bg-slate-800/50";
-                                    let textColor = "text-slate-800 dark:text-slate-200";
-                                    let strike = "";
-                                    let bgHighlight = "";
-                                    if (d.status === 'added') { bgHighlight = "bg-green-50 dark:bg-emerald-900/10"; textColor = "text-green-600 dark:text-emerald-400 font-bold"; }
-                                    else if (d.status === 'removed') { bgHighlight = "bg-red-50 dark:bg-red-900/10"; textColor = "text-red-500 dark:text-red-400 font-bold opacity-70"; strike = "line-through"; }
-                                    else if (d.status === 'changed') { bgHighlight = "bg-amber-50 dark:bg-amber-900/10"; textColor = "text-amber-600 dark:text-amber-400 font-bold"; }
-
-                                    return (
-                                        <tr key={idx} className={`transition-colors ${rowClass} ${bgHighlight}`}>
-                                            <td className={`px-2 py-2 ${textColor} ${strike}`}>
-                                                {d.name} {d.status === 'added' && <span className="text-[10px] ml-2 px-1 rounded-sm bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 font-bold">ADDED</span>}
-                                                {d.status === 'removed' && <span className="text-[10px] ml-2 px-1 rounded-sm bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200 font-bold">REMOVED</span>}
-                                            </td>
-                                            <td className={`px-2 py-2 text-slate-400 dark:text-slate-500 ${strike}`}>{d.currTime}</td>
-                                            <td className={`px-2 py-2 ${textColor}`}>{d.propTime}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 text-sm uppercase tracking-wider flex items-center justify-between">
+                            Routing Operations
+                            <span className="text-[10px] text-slate-400 tracking-normal font-normal normal-case border dark:border-white/10 px-2 py-0.5 rounded-full">{allOpNames.length} Tracked Nodes</span>
+                        </h3>
+                        <div className="space-y-3">
+                            {allOpNames.length > 0 ? allOpNames.map(name => {
+                                const c = currOps.find(x => x.name === name);
+                                const p = propOps.find(x => x.name === name);
+                                const status = !c ? 'added' : !p ? 'removed' : (c.timeMinutes !== p.timeMinutes ? 'changed' : 'unchanged');
+                                return <DiffField key={name} label={`Operation: ${name}`} oldVal={c ? c.timeMinutes : '-'} newVal={p ? p.timeMinutes : '-'} status={status} />;
+                            }) : <div className="text-sm text-center text-slate-400 p-4 border border-dashed rounded-xl dark:border-white/10">No routing operations attached</div>}
+                        </div>
                     </div>
                 </div>
             );
@@ -347,6 +307,7 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
                     <div>
                         <div className="flex items-center gap-3 mb-1">
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{title}</h2>
+                            <RiskBadge level={riskLevel} />
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Target Type: <span className="uppercase font-semibold text-slate-700 dark:text-slate-300">{type}</span></p>
                     </div>

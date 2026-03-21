@@ -205,6 +205,59 @@ router.put('/:id/changes', auth, async (req, res) => {
         if (!eco) return res.status(404).json({ msg: 'ECO target not found' });
         eco.changes = req.body.changes;
         eco.markModified('changes');
+
+        // Dynamic Risk Level Calculation Engine
+        let riskLevel = 'Low';
+        try {
+            if (eco.type === 'product') {
+                const product = await Product.findById(eco.productId);
+                if (product) {
+                    const changesObj = req.body.changes || {};
+                    let magnitude = 0;
+                    if (changesObj.price !== undefined && changesObj.price !== product.price) magnitude += 1;
+                    if (changesObj.costPrice !== undefined && changesObj.costPrice !== product.costPrice) magnitude += 1;
+
+                    const oldAttach = product.attachments || [];
+                    const newAttach = changesObj.attachments || oldAttach;
+                    magnitude += Math.abs(newAttach.length - oldAttach.length);
+
+                    if (magnitude >= 3) riskLevel = 'High';
+                    else if (magnitude === 2) riskLevel = 'Medium';
+                }
+            } else if (eco.type === 'bom') {
+                const bom = await BoM.findOne({ productId: eco.productId, status: 'active' });
+                if (bom) {
+                    const changesObj = req.body.changes || {};
+                    const oldComps = bom.components || [];
+                    const newComps = changesObj.components || oldComps;
+
+                    const addedComps = newComps.filter(nc => !oldComps.find(c => c.name === nc.name)).length;
+                    const removedComps = oldComps.filter(oc => !newComps.find(c => c.name === oc.name)).length;
+                    const modifiedComps = newComps.filter(nc => {
+                        const oc = oldComps.find(c => c.name === nc.name);
+                        return oc && oc.quantity !== nc.quantity;
+                    }).length;
+
+                    let magnitude = addedComps + removedComps + modifiedComps;
+
+                    const oldOps = bom.operations || [];
+                    const newOps = changesObj.operations || oldOps;
+                    const oldTime = oldOps.reduce((acc, o) => acc + (o.timeMinutes || 0), 0);
+                    const newTime = newOps.reduce((acc, o) => acc + (o.timeMinutes || 0), 0);
+                    const timeImpact = Math.abs(newTime - oldTime);
+
+                    if (timeImpact >= 30) magnitude += 3;
+                    else if (timeImpact >= 10) magnitude += 2;
+                    else if (timeImpact > 0) magnitude += 1;
+
+                    if (magnitude >= 4) riskLevel = 'High';
+                    else if (magnitude >= 2) riskLevel = 'Medium';
+                }
+            }
+        } catch (e) { console.error("Risk Calc Error:", e); }
+
+        eco.riskLevel = riskLevel;
+
         await eco.save();
         res.json(eco);
     } catch (err) {
@@ -221,10 +274,10 @@ router.get('/:id/comparison', auth, async (req, res) => {
 
         if (eco.type === 'product') {
             const product = await Product.findById(eco.productId);
-            return res.json({ type: 'product', title: eco.title, targetCurrent: product, proposedChanges: eco.changes, versionUpdate: eco.versionUpdate, stage: eco.stage, signatures: eco.signatures });
+            return res.json({ type: 'product', title: eco.title, targetCurrent: product, proposedChanges: eco.changes, versionUpdate: eco.versionUpdate, stage: eco.stage, signatures: eco.signatures, riskLevel: eco.riskLevel });
         } else if (eco.type === 'bom') {
             const bom = await BoM.findOne({ productId: eco.productId, status: 'active' });
-            return res.json({ type: 'bom', title: eco.title, targetCurrent: bom || {}, proposedChanges: eco.changes, versionUpdate: eco.versionUpdate, stage: eco.stage, signatures: eco.signatures });
+            return res.json({ type: 'bom', title: eco.title, targetCurrent: bom || {}, proposedChanges: eco.changes, versionUpdate: eco.versionUpdate, stage: eco.stage, signatures: eco.signatures, riskLevel: eco.riskLevel });
         }
     } catch (err) { res.status(500).send('Server Error'); }
 });
