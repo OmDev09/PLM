@@ -5,6 +5,8 @@ import ECOList from '../components/ECOList';
 import ProductList from '../components/ProductList';
 import AuditReport from '../components/AuditReport';
 
+import BoMList from '../components/BoMList';
+
 const UnifiedDashboard = () => {
     const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -16,7 +18,7 @@ const UnifiedDashboard = () => {
         switch (activeMenu) {
             case 'ecos': return <ECOList />;
             case 'products': return <ProductList />;
-            case 'boms': return <ProductList />; // Reusing ProductList since BoMs are attached to Products
+            case 'boms': return <BoMList />;
             case 'reporting': return <AuditReport />;
             default: return <ECOList />;
         }

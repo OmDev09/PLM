@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    price: { type: Number, required: true },
+    name: { type: String, required: true, maxlength: 255 },
+    price: { type: Number, required: true }, // Sales Price
+    costPrice: { type: Number, default: 0 },
+    attachments: [{ type: String }], // Array of file names or URLs
 
     // Immutability Core
     version: { type: Number, default: 1 },

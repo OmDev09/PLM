@@ -24,7 +24,7 @@ const ECOList = () => {
 
     const fetchData = async () => {
         try {
-            const [ecoRes, prodRes] = await Promise.all([api.get('/eco'), api.get('/products')]);
+            const [ecoRes, prodRes] = await Promise.all([api.get('/eco'), api.get('/products/active')]);
             setEcos(ecoRes.data);
             setProducts(prodRes.data);
         } catch (err) { console.error(err); }

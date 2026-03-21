@@ -1,25 +1,23 @@
 const mongoose = require('mongoose');
 
 const ComponentSchema = new mongoose.Schema({
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    name: { type: String }, // cached for easy viewing
+    name: { type: String, required: true },
     quantity: { type: Number, required: true }
 }, { _id: false });
 
 const OperationSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // e.g., 'Assembly', 'Quality Inspection'
+    name: { type: String, required: true },
     timeMinutes: { type: Number, required: true },
     workCenter: { type: String, required: true }
 }, { _id: false });
 
 const BoMSchema = new mongoose.Schema({
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true }, // Parent Product this BoM builds
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    reference: { type: String, required: true }, // Unique identifier for BoM
     version: { type: Number, default: 1 },
     status: { type: String, enum: ['active', 'archived'], default: 'active' },
-
     components: [ComponentSchema],
     operations: [OperationSchema],
-
     previousVersionId: { type: mongoose.Schema.Types.ObjectId, ref: 'BoM' }
 }, { timestamps: true });
 
