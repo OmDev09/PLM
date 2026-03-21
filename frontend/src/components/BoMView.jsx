@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { X, Plus, Trash2, Cpu, Wrench } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X, Plus, Trash2, Box, Wrench, Settings } from 'lucide-react';
 
 const BoMView = ({ product, onClose }) => {
     const { user } = useAuth();
@@ -10,7 +9,6 @@ const BoMView = ({ product, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [isMinting, setIsMinting] = useState(false);
 
-    // ECO State
     const [isProposing, setIsProposing] = useState(false);
     const [components, setComponents] = useState([]);
     const [operations, setOperations] = useState([]);
@@ -23,17 +21,10 @@ const BoMView = ({ product, onClose }) => {
         try {
             const res = await api.get(`/bom/${product._id}`);
             if (res.data && !res.data.isNew) {
-                setBom(res.data);
-                setComponents(res.data.components);
-                setOperations(res.data.operations);
-            } else {
-                setBom(null);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+                setBom(res.data); setComponents(res.data.components); setOperations(res.data.operations);
+            } else { setBom(null); }
+        } catch (err) { console.error(err); }
+        finally { setLoading(false); }
     };
 
     useEffect(() => { fetchBom(); }, [product]);
@@ -42,142 +33,122 @@ const BoMView = ({ product, onClose }) => {
         try {
             setIsMinting(true);
             const res = await api.post(`/bom/${product._id}`, { components: [], operations: [] });
-            setBom(res.data);
-            setComponents([]);
-            setOperations([]);
-            setIsProposing(true); // Automatically open edit mode
-        } catch (err) {
-            alert(err.response?.data?.msg || 'Error minting baseline BoM');
-        } finally {
-            setIsMinting(false);
-        }
+            setBom(res.data); setComponents([]); setOperations([]); setIsProposing(true);
+        } catch (err) { alert(err.response?.data?.msg || 'Error minting baseline BoM'); }
+        finally { setIsMinting(false); }
     };
 
     const handleProposeECO = async (e) => {
         e.preventDefault();
         if (!ecoTitle) return alert('Provide an ECO Title');
         try {
-            await api.post('/eco', {
-                title: ecoTitle,
-                type: 'bom',
-                productId: product._id,
-                changes: { components, operations },
-                versionUpdate
-            });
+            await api.post('/eco', { title: ecoTitle, type: 'bom', productId: product._id, changes: { components, operations }, versionUpdate });
             alert('BoM ECO Proposed successfully. View in Pipeline.');
             onClose();
-        } catch (err) {
-            alert(err.response?.data?.msg || 'Error proposing ECO');
-        }
+        } catch (err) { alert(err.response?.data?.msg || 'Error proposing ECO'); }
     };
 
     const addComponent = () => setComponents([...components, { name: '', quantity: 1 }]);
-    const updateComponent = (idx, field, val) => {
-        const newC = [...components]; newC[idx][field] = val; setComponents(newC);
-    };
+    const updateComponent = (idx, field, val) => { const newC = [...components]; newC[idx][field] = val; setComponents(newC); };
     const removeComponent = (idx) => setComponents(components.filter((_, i) => i !== idx));
 
     const addOperation = () => setOperations([...operations, { name: '', timeMinutes: 0, workCenter: '' }]);
-    const updateOperation = (idx, field, val) => {
-        const newO = [...operations]; newO[idx][field] = val; setOperations(newO);
-    };
+    const updateOperation = (idx, field, val) => { const newO = [...operations]; newO[idx][field] = val; setOperations(newO); };
     const removeOperation = (idx) => setOperations(operations.filter((_, i) => i !== idx));
 
     return (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                className="glass-panel w-full max-w-4xl rounded-2xl overflow-hidden border border-slate-700 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#f9f9f9] w-full max-w-5xl rounded shadow-2xl flex flex-col h-[90vh]">
 
-                {/* Header */}
-                <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center shrink-0">
-                    <div>
-                        <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-2 tracking-tight">
-                            <Cpu className="text-emerald-500" /> Bill of Materials
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Target Framework: <span className="text-white">{product.name}</span> (v{product.version})</p>
-                    </div>
-                    <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X size={24} /></button>
+                {/* Odoo Header */}
+                <div className="bg-white border-b border-gray-300 flex justify-between items-center p-3 shrink-0">
+                    <h3 className="text-lg font-normal text-gray-800 flex items-center gap-2"><Box size={18} className="text-[#00A09D]" /> Bill of Materials <span className="text-sm text-gray-400">/ {product.name}</span></h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
                 </div>
 
                 {/* Content */}
-                <div className="p-8 overflow-y-auto">
+                <div className="p-4 sm:p-8 overflow-y-auto flex-1">
                     {loading ? (
-                        <div className="text-center py-10 text-slate-500 uppercase tracking-widest font-bold animate-pulse">Scanning DB...</div>
+                        <div className="text-center py-10 text-gray-400 font-medium">Loading BoM Structure...</div>
                     ) : !bom ? (
-                        <div className="text-center py-20">
-                            <div className="text-slate-400 mb-6 font-mono text-sm">No baseline BoM exists for this asset.</div>
+                        <div className="bg-white border border-gray-300 shadow-sm p-10 text-center flex flex-col items-center justify-center">
+                            <div className="text-gray-500 mb-6 text-sm">No manufacturing structure exists for this product.</div>
                             {(user?.role === 'Engineer' || user?.role === 'Admin') && (
-                                <button onClick={handleMintBaseline} disabled={isMinting} className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
-                                    Mint V1 Baseline
+                                <button onClick={handleMintBaseline} disabled={isMinting} className="bg-[#00A09D] hover:bg-[#008784] text-white px-5 py-2 text-[13px] rounded-sm font-medium transition-colors">
+                                    Create BoM Form
                                 </button>
                             )}
                         </div>
                     ) : (
-                        <div className="space-y-8">
+                        <div className="bg-white border border-gray-300 shadow-sm p-6 relative">
+
                             {/* ECO Header Bar (if proposing) */}
                             {isProposing && (
-                                <div className="bg-slate-950/80 p-5 rounded-xl border border-blue-500/30 flex flex-col gap-4">
-                                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> ECO Draft Mode Active</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input type="text" placeholder="ECO Designation (Title)" className="bg-slate-900 border border-slate-800 text-white p-3 rounded-lg text-sm focus:border-blue-500 outline-none w-full font-mono" value={ecoTitle} onChange={e => setEcoTitle(e.target.value)} />
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 bg-slate-900 border border-slate-800 rounded-lg">
-                                            <input type="checkbox" className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500 bg-slate-800 border-slate-700" checked={versionUpdate} onChange={e => setVersionUpdate(e.target.checked)} />
-                                            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Require Version Bump</span>
-                                        </label>
+                                <div className="bg-blue-50/50 p-4 rounded-sm border border-blue-100 mb-8">
+                                    <div className="flex items-center gap-2 mb-4 text-[#00A09D] text-[13px] font-bold"><Settings size={14} /> Engineering Change Draft Mode</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="flex flex-col">
+                                            <label className="text-xs font-bold text-gray-600 mb-1">ECO Title</label>
+                                            <input type="text" className="border border-gray-300 px-3 py-1.5 text-[13px] rounded-sm focus:border-[#00A09D] outline-none" value={ecoTitle} onChange={e => setEcoTitle(e.target.value)} />
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-4 md:mt-0">
+                                            <input type="checkbox" className="w-4 h-4 text-[#00A09D]" checked={versionUpdate} onChange={e => setVersionUpdate(e.target.checked)} />
+                                            <label className="text-[13px] font-medium text-gray-700">Generate New Version</label>
+                                        </div>
                                     </div>
                                 </div>
                             )}
+
+                            <div className="mb-6 flex items-center gap-4">
+                                <span className="text-2xl text-gray-800">BoM - {product.name}</span>
+                                <span className="bg-gray-100 text-gray-700 border border-gray-200 text-[10px] px-2 py-0.5 rounded font-bold">V {bom.version}</span>
+                            </div>
 
                             {/* Lists Container */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Components */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-sm font-bold text-slate-200 uppercase tracking-widest flex items-center gap-2"><Cpu size={14} className="text-emerald-500" /> Material Components</h4>
-                                        {isProposing && <button onClick={addComponent} className="text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"><Plus size={12} className="inline" /> Add Item</button>}
+                                    <div className="border-b border-gray-200 flex text-[13px] mb-4">
+                                        <div className="px-4 py-2 border-b-2 border-[#00A09D] text-[#00A09D] font-bold">Components</div>
                                     </div>
-                                    {components.length === 0 ? <p className="text-xs text-slate-600 font-mono">No components defined.</p> : (
-                                        <div className="space-y-3">
+                                    <table className="w-full text-left text-[13px]">
+                                        <thead className="text-gray-500 border-b border-gray-200">
+                                            <tr><th className="py-2">Component</th><th className="py-2">Quantity</th><th className="py-2 w-8"></th></tr>
+                                        </thead>
+                                        <tbody>
                                             {components.map((c, idx) => (
-                                                <div key={idx} className="flex gap-3 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
-                                                    <input readOnly={!isProposing} type="text" placeholder="Component Name" className={`flex-1 bg-transparent text-sm text-slate-200 border-b border-slate-700 focus:border-emerald-500 outline-none pb-1 font-mono placeholder-slate-600 ${!isProposing && 'border-none'}`} value={c.name} onChange={e => updateComponent(idx, 'name', e.target.value)} />
-                                                    <div className="flex items-center gap-2 w-24">
-                                                        <span className="text-xs text-slate-500">Qty:</span>
-                                                        <input readOnly={!isProposing} type="number" className={`flex-1 bg-transparent text-sm text-white border-b border-slate-700 focus:border-emerald-500 outline-none pb-1 text-right font-mono ${!isProposing && 'border-none'}`} value={c.quantity} onChange={e => updateComponent(idx, 'quantity', e.target.value)} />
-                                                    </div>
-                                                    {isProposing && <button onClick={() => removeComponent(idx)} className="text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>}
-                                                </div>
+                                                <tr key={idx} className="border-b border-gray-100">
+                                                    <td className="py-1 pr-2"><input readOnly={!isProposing} type="text" className={`w-full py-1 bg-transparent outline-none focus:border-b-2 focus:border-[#00A09D] ${!isProposing && 'text-gray-700'}`} value={c.name} onChange={e => updateComponent(idx, 'name', e.target.value)} /></td>
+                                                    <td className="py-1 pr-2"><input readOnly={!isProposing} type="number" className={`w-full py-1 bg-transparent outline-none focus:border-b-2 focus:border-[#00A09D] ${!isProposing && 'text-gray-700'}`} value={c.quantity} onChange={e => updateComponent(idx, 'quantity', e.target.value)} /></td>
+                                                    <td className="py-1">{isProposing && <button onClick={() => removeComponent(idx)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>}</td>
+                                                </tr>
                                             ))}
-                                        </div>
-                                    )}
+                                        </tbody>
+                                    </table>
+                                    {isProposing && <button onClick={addComponent} className="text-[#00A09D] hover:underline text-[13px] font-medium mt-2 py-1">Add a line</button>}
                                 </div>
 
                                 {/* Operations */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-sm font-bold text-slate-200 uppercase tracking-widest flex items-center gap-2"><Wrench size={14} className="text-teal-500" /> Workflow Operations</h4>
-                                        {isProposing && <button onClick={addOperation} className="text-teal-400 hover:text-teal-300 bg-teal-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"><Plus size={12} className="inline" /> Add Step</button>}
+                                    <div className="border-b border-gray-200 flex text-[13px] mb-4">
+                                        <div className="px-4 py-2 border-b-2 border-gray-500 text-gray-700 font-bold">Operations</div>
                                     </div>
-                                    {operations.length === 0 ? <p className="text-xs text-slate-600 font-mono">No operations pathway defined.</p> : (
-                                        <div className="space-y-3">
+                                    <table className="w-full text-left text-[13px]">
+                                        <thead className="text-gray-500 border-b border-gray-200">
+                                            <tr><th className="py-2">Operation</th><th className="py-2">Duration (m)</th><th className="py-2">Work Center</th><th className="py-2 w-8"></th></tr>
+                                        </thead>
+                                        <tbody>
                                             {operations.map((o, idx) => (
-                                                <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-slate-800 space-y-2 relative">
-                                                    {isProposing && <button onClick={() => removeOperation(idx)} className="absolute top-3 right-3 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>}
-                                                    <input readOnly={!isProposing} type="text" placeholder="Operation Step Name" className={`w-full bg-transparent text-sm font-bold text-slate-200 border-b border-slate-700 focus:border-teal-500 outline-none pb-1 ${!isProposing && 'border-none'}`} value={o.name} onChange={e => updateOperation(idx, 'name', e.target.value)} />
-                                                    <div className="flex gap-4">
-                                                        <div className="flex-1">
-                                                            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1">Time (mins)</label>
-                                                            <input readOnly={!isProposing} type="number" className={`w-full bg-slate-950 text-xs text-white p-2 rounded-md outline-none border border-slate-800 focus:border-teal-500 font-mono ${!isProposing && 'border-transparent bg-slate-900/30'}`} value={o.timeMinutes} onChange={e => updateOperation(idx, 'timeMinutes', e.target.value)} />
-                                                        </div>
-                                                        <div className="flex-[2]">
-                                                            <label className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1">Work Center</label>
-                                                            <input readOnly={!isProposing} type="text" placeholder="e.g. Paint Booth" className={`w-full bg-slate-950 text-xs text-white p-2 rounded-md outline-none border border-slate-800 focus:border-teal-500 font-mono ${!isProposing && 'border-transparent bg-slate-900/30'}`} value={o.workCenter} onChange={e => updateOperation(idx, 'workCenter', e.target.value)} />
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <tr key={idx} className="border-b border-gray-100">
+                                                    <td className="py-1 pr-2"><input readOnly={!isProposing} type="text" className={`w-full py-1 bg-transparent outline-none focus:border-b-2 focus:border-gray-500 ${!isProposing && 'text-gray-700'}`} value={o.name} onChange={e => updateOperation(idx, 'name', e.target.value)} /></td>
+                                                    <td className="py-1 pr-2"><input readOnly={!isProposing} type="number" className={`w-full py-1 bg-transparent outline-none focus:border-b-2 focus:border-gray-500 ${!isProposing && 'text-gray-700'}`} value={o.timeMinutes} onChange={e => updateOperation(idx, 'timeMinutes', e.target.value)} /></td>
+                                                    <td className="py-1 pr-2"><input readOnly={!isProposing} type="text" className={`w-full py-1 bg-transparent outline-none focus:border-b-2 focus:border-gray-500 ${!isProposing && 'text-gray-700'}`} value={o.workCenter} onChange={e => updateOperation(idx, 'workCenter', e.target.value)} /></td>
+                                                    <td className="py-1">{isProposing && <button onClick={() => removeOperation(idx)} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>}</td>
+                                                </tr>
                                             ))}
-                                        </div>
-                                    )}
+                                        </tbody>
+                                    </table>
+                                    {isProposing && <button onClick={addOperation} className="text-gray-500 hover:underline text-[13px] font-medium mt-2 py-1">Add a line</button>}
                                 </div>
                             </div>
                         </div>
@@ -186,20 +157,20 @@ const BoMView = ({ product, onClose }) => {
 
                 {/* Footer */}
                 {bom && (
-                    <div className="p-6 border-t border-slate-800 bg-slate-900/80 flex justify-end shrink-0 gap-4">
+                    <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-2 shrink-0">
                         {isProposing ? (
                             <>
-                                <button onClick={() => { setIsProposing(false); fetchBom(); }} className="px-6 py-2 border border-slate-700 rounded-lg text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors">Abort ECO</button>
-                                <button onClick={handleProposeECO} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(79,70,229,0.3)]">Inject BoM Mutation</button>
+                                <button onClick={handleProposeECO} className="bg-[#00A09D] hover:bg-[#008784] text-white px-4 py-1.5 text-[13px] rounded-sm transition-colors">Save Proposal</button>
+                                <button onClick={() => { setIsProposing(false); fetchBom(); }} className="bg-white border border-gray-300 text-gray-700 px-4 py-1.5 text-[13px] rounded-sm hover:bg-gray-100">Discard</button>
                             </>
                         ) : (
                             (user?.role === 'Engineer' || user?.role === 'Admin') && (
-                                <button onClick={() => setIsProposing(true)} className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors">Draft BoM ECO</button>
+                                <button onClick={() => setIsProposing(true)} className="bg-white border border-gray-300 text-gray-700 px-4 py-1.5 text-[13px] rounded-sm hover:bg-gray-100 font-medium">Create BoM ECO</button>
                             )
                         )}
                     </div>
                 )}
-            </motion.div>
+            </div>
         </div>
     );
 };
