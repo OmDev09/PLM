@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Menu, Search, UserCircle, FileText, Database, Settings as SettingsIcon, ChevronDown, ChevronRight, Activity } from 'lucide-react';
 import ECOList from '../components/ECOList';
 import ProductList from '../components/ProductList';
-import AuditReport from '../components/AuditReport';
+import ECOResport from '../components/ECOResport';
 
 import BoMList from '../components/BoMList';
 
@@ -21,7 +21,7 @@ const UnifiedDashboard = () => {
             case 'ecos': return <ECOList />;
             case 'products': return <ProductList />;
             case 'boms': return <BoMList />;
-            case 'reporting': return <AuditReport />;
+            case 'reporting': return <ECOResport />;
             case 'settings': return <Settings />;
             default: return <ECOList />;
         }

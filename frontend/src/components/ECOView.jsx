@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { X, CheckSquare, FastForward, ExternalLink, Activity, Save, Play } from 'lucide-react';
 
-const ECOView = ({ ecoId, onClose, refreshList }) => {
+const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
     const { user } = useAuth();
     const [ecoData, setEcoData] = useState(null);
     const [viewMode, setViewMode] = useState('details'); // details, changes
@@ -102,6 +102,15 @@ const ECOView = ({ ecoId, onClose, refreshList }) => {
     const isFinal = stage?.isFinal;
     const iAssigned = signatures?.find(s => s.user._id === user.id && s.stage === stage?._id);
 
+    let approvalStatus = 'N/A';
+    if (stage && !isDraft && !isFinal) {
+        const requiredIds = (stage.approvals || []).filter(a => a.type === 'required').map(a => a.user?.toString());
+        const signedIds = (signatures || []).filter(s => s.stage === stage._id).map(s => s.user?._id?.toString());
+        const missing = requiredIds.filter(id => !signedIds.includes(id));
+        approvalStatus = missing.length > 0 ? 'Pending' : 'Approved';
+        if (requiredIds.length === 0) approvalStatus = 'Approved';
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
@@ -115,6 +124,11 @@ const ECOView = ({ ecoId, onClose, refreshList }) => {
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${isFinal ? 'bg-green-100 text-green-800 border-green-200' : isDraft ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-blue-100 text-blue-800 border-blue-200'} border`}>
                                 {isFinal ? 'DONE (FINAL)' : stage?.name || 'ORPHAN'}
                             </span>
+                            {!isDraft && !isFinal && (
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold border ${approvalStatus === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                                    Status: {approvalStatus}
+                                </span>
+                            )}
                         </div>
                         <p className="text-sm text-slate-500">Target Type: <span className="uppercase font-semibold text-slate-700">{type}</span></p>
                     </div>
@@ -132,7 +146,7 @@ const ECOView = ({ ecoId, onClose, refreshList }) => {
                         <ExternalLink size={14} /> Open {type === 'product' ? 'Product Master' : 'BoM Master'}
                     </button>
 
-                    {!isFinal && !isDraft && (
+                    {!readOnlyReport && !isFinal && !isDraft && user?.role !== 'Engineer' && (
                         <div className="flex bg-slate-100 rounded-md p-0.5 border border-slate-200">
                             <button onClick={handleSign} disabled={iAssigned} className={`px-3 py-1 text-sm font-medium rounded ${iAssigned ? 'text-slate-400 cursor-not-allowed' : 'text-blue-700 hover:bg-white shadow-sm'}`}>
                                 {iAssigned ? 'Signed' : 'Approve Stage'}
@@ -141,7 +155,7 @@ const ECOView = ({ ecoId, onClose, refreshList }) => {
                         </div>
                     )}
 
-                    {isDraft && (
+                    {!readOnlyReport && isDraft && ['Engineer', 'Admin'].includes(user?.role) && (
                         <button onClick={handleAdvance} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
                             <Play size={14} /> START LIFECYCLE
                         </button>

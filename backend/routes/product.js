@@ -8,23 +8,34 @@ const auth = require('../middleware/auth');
 // @desc    Create a new baseline product
 router.post('/', auth(['Engineer']), async (req, res) => {
     try {
-        const { name, price } = req.body;
+        const { name, price, costPrice, attachments } = req.body;
 
-        const product = new Product({ name, price, version: 1, status: 'active' });
+        // Create the product including the new parameters
+        const product = new Product({
+            name,
+            price: Number(price),
+            costPrice: Number(costPrice || 0),
+            attachments: attachments || [],
+            version: 1,
+            status: 'active'
+        });
+
         await product.save();
 
         const log = new AuditLog({
             action: 'PRODUCT_CREATED',
             entityId: product._id,
-            newValue: { name, price, version: 1 },
+            oldValue: null,
+            newValue: product.toObject(),
             user: req.user.id
         });
+
         await log.save();
 
         res.json(product);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        console.error('API Error /products POST:', err);
+        res.status(500).json({ msg: err.message || 'Server Data Write Error' });
     }
 });
 
@@ -35,7 +46,7 @@ router.get('/', auth([]), async (req, res) => {
         const products = await Product.find({ status: 'active' }).sort({ createdAt: -1 });
         res.json(products);
     } catch (err) {
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: err.message });
     }
 });
 
@@ -46,7 +57,7 @@ router.get('/archived', auth([]), async (req, res) => {
         const products = await Product.find({ status: 'archived' }).sort({ createdAt: -1 });
         res.json(products);
     } catch (err) {
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: err.message });
     }
 });
 
