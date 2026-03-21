@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, Key, ArrowRight, Loader2, Layers, ShieldCheck } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -78,10 +79,9 @@ const Login = () => {
     };
 
     return (
-        <div className="relative h-screen w-full bg-white overflow-hidden flex font-sans">
+        <div className="relative h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden flex font-sans transition-colors duration-500">
 
-            {/* Main Center Card */}
-            <div className="relative w-full h-full bg-white overflow-hidden flex flex-col lg:flex-row">
+            <div className="relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
 
                 {/* 
                     FORM PANEL
@@ -93,15 +93,19 @@ const Login = () => {
                         left: isDesktop ? (isLogin ? '50%' : '0%') : '0%',
                     }}
                     transition={slideTransition}
-                    className="absolute top-0 w-full lg:w-1/2 h-full bg-white z-10 flex flex-col justify-center px-6 sm:px-16 xl:px-24 overflow-y-auto"
+                    className="absolute top-0 w-full lg:w-1/2 h-full bg-white dark:bg-slate-900/60 dark:backdrop-blur-2xl dark:border-r border-white/10 z-10 flex flex-col justify-center px-6 sm:px-16 xl:px-24 overflow-y-auto transition-colors duration-500 shadow-2xl"
                 >
+                    <div className="absolute top-6 right-6 lg:left-6 lg:right-auto z-50">
+                        <ThemeToggle />
+                    </div>
+
                     <div className="w-full max-w-[400px] mx-auto py-12">
                         {/* Mobile Header */}
                         <div className="lg:hidden flex items-center gap-3 mb-12">
-                            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
                                 <Layers className="w-5 h-5 text-white" />
                             </div>
-                            <span className="text-xl font-bold text-slate-800 tracking-tight">PLM</span>
+                            <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">NEXUS PLM</span>
                         </div>
 
                         <AnimatePresence mode="wait">
@@ -113,10 +117,10 @@ const Login = () => {
                                 transition={{ duration: 0.3 }}
                                 className="mb-10"
                             >
-                                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors">
                                     {isLogin ? 'Sign In' : 'Create Account'}
                                 </h1>
-                                <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+                                <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed transition-colors">
                                     {isLogin
                                         ? 'Enter your credentials to access your workspace securely.'
                                         : 'Set up your profile to start managing lifecycle processes.'}
@@ -132,8 +136,8 @@ const Login = () => {
                                     exit={{ opacity: 0, height: 0 }}
                                     className="mb-6 overflow-hidden"
                                 >
-                                    <div className="p-3 bg-red-50 border border-red-100/60 text-red-600 text-sm font-medium rounded-lg flex items-start gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />
+                                    <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-100/60 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400 flex-shrink-0 mt-1.5" />
                                         <span>{error}</span>
                                     </div>
                                 </motion.div>
@@ -152,16 +156,16 @@ const Login = () => {
                                 >
                                     {/* Email */}
                                     <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Work Email</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">Work Email</label>
                                         <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                                 <Mail className="h-5 w-5" />
                                             </div>
                                             <input
                                                 type="email"
                                                 name="emailId"
                                                 required
-                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white transition-shadow text-sm"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:focus:ring-indigo-500/40 focus:border-indigo-600 dark:focus:border-indigo-400 transition-all text-sm backdrop-blur-sm"
                                                 value={formData.emailId}
                                                 onChange={handleChange}
                                                 placeholder="name@company.com"
@@ -172,16 +176,16 @@ const Login = () => {
                                     {/* Login ID (Signup Only) */}
                                     {!isLogin && (
                                         <div className="space-y-1.5 pt-1">
-                                            <label className="text-sm font-medium text-slate-700">Username</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">Username</label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                                     <User className="h-5 w-5" />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     name="loginId"
                                                     required
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white transition-shadow text-sm"
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:focus:ring-indigo-500/40 focus:border-indigo-600 dark:focus:border-indigo-400 transition-all text-sm backdrop-blur-sm"
                                                     value={formData.loginId}
                                                     onChange={handleChange}
                                                     placeholder="Unique identifier"
@@ -193,22 +197,22 @@ const Login = () => {
                                     {/* Password */}
                                     <div className="space-y-1.5 pt-1">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-slate-700">Password</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">Password</label>
                                             {isLogin && (
-                                                <button type="button" className="text-[13px] font-medium text-indigo-600 hover:text-indigo-700">
+                                                <button type="button" className="text-[13px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
                                                     Forgot password?
                                                 </button>
                                             )}
                                         </div>
                                         <div className="relative group">
-                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                                 <Lock className="h-5 w-5" />
                                             </div>
                                             <input
                                                 type="password"
                                                 name="password"
                                                 required
-                                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white transition-shadow text-sm"
+                                                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:focus:ring-indigo-500/40 focus:border-indigo-600 dark:focus:border-indigo-400 transition-all text-sm backdrop-blur-sm"
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 placeholder="••••••••"
@@ -219,16 +223,16 @@ const Login = () => {
                                     {/* Confirm Password (Signup Only) */}
                                     {!isLogin && (
                                         <div className="space-y-1.5 pt-1">
-                                            <label className="text-sm font-medium text-slate-700">Confirm Password</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors">Confirm Password</label>
                                             <div className="relative group">
-                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                                     <Key className="h-5 w-5" />
                                                 </div>
                                                 <input
                                                     type="password"
                                                     name="confirmPassword"
                                                     required
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white transition-shadow text-sm"
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:focus:ring-indigo-500/40 focus:border-indigo-600 dark:focus:border-indigo-400 transition-all text-sm backdrop-blur-sm"
                                                     value={formData.confirmPassword}
                                                     onChange={handleChange}
                                                     placeholder="••••••••"
@@ -242,7 +246,7 @@ const Login = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full flex items-center justify-center py-2.5 px-4 mt-8 bg-black hover:bg-slate-900 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:ring-offset-2 disabled:opacity-70 group"
+                                className="w-full flex items-center justify-center py-2.5 px-4 mt-8 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-indigo-900/10 focus:outline-none focus:ring-2 focus:ring-slate-900/20 dark:focus:ring-indigo-500/40 focus:ring-offset-2 dark:focus:ring-offset-slate-900 disabled:opacity-70 group"
                             >
                                 {isLoading ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -257,13 +261,13 @@ const Login = () => {
 
                         {/* Mobile Toggle */}
                         <div className="mt-8 text-center lg:hidden">
-                            <span className="text-slate-500 text-sm">
+                            <span className="text-slate-500 dark:text-slate-400 text-sm transition-colors">
                                 {isLogin ? "Don't have an account?" : "Already have an account?"}
                             </span>
                             <button
                                 type="button"
                                 onClick={toggleMode}
-                                className="ml-1.5 text-sm font-medium text-indigo-600"
+                                className="ml-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition-colors"
                             >
                                 {isLogin ? 'Sign up' : 'Sign in'}
                             </button>

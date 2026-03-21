@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const AuditLogSchema = new mongoose.Schema({
     action: {
         type: String,
-        enum: ['ECO_CREATED', 'ECO_APPROVED', 'ECO_APPLIED', 'PRODUCT_CREATED'],
+        enum: ['ECO_CREATED', 'ECO_APPROVED', 'ECO_APPLIED', 'PRODUCT_CREATED', 'BOM_BASELINE_CREATED', 'ECO_DRAFTED'],
         required: true
     },
 
