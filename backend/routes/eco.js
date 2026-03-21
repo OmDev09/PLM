@@ -92,34 +92,51 @@ router.post('/start', auth, async (req, res) => {
 
 // Helper to execute PLM application logic upon finalization
 const executeFinalization = async (eco, session) => {
-    let oldData;
+    // PREVENT DUPLICATE KEY INJECTIONS FROM FRONTEND SPREADS
+    const safeChanges = { ...eco.changes };
+    delete safeChanges._id;
+    delete safeChanges.createdAt;
+    delete safeChanges.updatedAt;
+    delete safeChanges.__v;
+
     if (eco.type === 'product') {
         const product = await Product.findById(eco.productId).session(session);
         if (!product) throw new Error('Active Product Master not found');
-        oldData = product.toObject();
 
         if (eco.versionUpdate) {
+            const oldData = product.toObject();
+            delete oldData._id;
+            delete oldData.createdAt;
+            delete oldData.updatedAt;
+            delete oldData.__v;
+
             product.status = 'archived';
             await product.save({ session });
-            const newProduct = new Product({ ...oldData, _id: undefined, version: oldData.version + 1, status: 'active', previousVersionId: oldData._id, ...eco.changes });
+            const newProduct = new Product({ ...oldData, version: product.version + 1, status: 'active', previousVersionId: product._id, ...safeChanges });
             await newProduct.save({ session });
         } else {
-            Object.assign(product, eco.changes);
+            Object.assign(product, safeChanges);
             await product.save({ session });
         }
     } else if (eco.type === 'bom') {
         const bom = await BoM.findOne({ productId: eco.productId, status: 'active' }).session(session);
         if (!bom) throw new Error('Active BoM not found for this product');
-        oldData = bom.toObject();
 
         if (eco.versionUpdate) {
+            const oldData = bom.toObject();
+            delete oldData._id;
+            delete oldData.createdAt;
+            delete oldData.updatedAt;
+            delete oldData.__v;
+
             bom.status = 'archived';
             await bom.save({ session });
-            const newBom = new BoM({ ...oldData, _id: undefined, version: oldData.version + 1, status: 'active', previousVersionId: oldData._id, components: eco.changes.components || oldData.components, operations: eco.changes.operations || oldData.operations });
+            const newBom = new BoM({ ...oldData, version: bom.version + 1, status: 'active', previousVersionId: bom._id, components: safeChanges.components || oldData.components, operations: safeChanges.operations || oldData.operations, ...safeChanges });
             await newBom.save({ session });
         } else {
-            if (eco.changes.components) bom.components = eco.changes.components;
-            if (eco.changes.operations) bom.operations = eco.changes.operations;
+            if (safeChanges.components) bom.components = safeChanges.components;
+            if (safeChanges.operations) bom.operations = safeChanges.operations;
+            Object.assign(bom, safeChanges);
             await bom.save({ session });
         }
     }
@@ -181,11 +198,16 @@ router.post('/:id/approve', auth, async (req, res) => {
         const currentSeq = eco.stage ? eco.stage.sequence : 0;
         const nextStage = await EcoStage.findOne({ sequence: { $gt: currentSeq } }).sort({ sequence: 1 }).session(session);
 
-        if (nextStage) eco.stage = nextStage._id;
-        eco.status = 'Completed';
-
-        // Apply product/BOM updates
-        await executeFinalization(eco, session);
+        if (nextStage) {
+            eco.stage = nextStage._id;
+            if (nextStage.isFinal) {
+                eco.status = 'Completed';
+                await executeFinalization(eco, session);
+            }
+        } else {
+            eco.status = 'Completed';
+            await executeFinalization(eco, session);
+        }
 
         await eco.save({ session });
         await session.commitTransaction();

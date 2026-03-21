@@ -349,9 +349,15 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
                     )}
 
                     {!readOnlyReport && currentStepIndex === 2 && ['Approver', 'Admin'].includes(user?.role) && (
-                        <button onClick={handleApprove} className="bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                            <CheckSquare size={14} /> APPROVE
-                        </button>
+                        stage?.approvals?.length > 0 ? (
+                            <button onClick={handleApprove} className="bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+                                <CheckSquare size={14} /> APPROVE
+                            </button>
+                        ) : (
+                            <button onClick={handleApprove} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+                                <CheckSquare size={14} /> VALIDATE
+                            </button>
+                        )
                     )}
 
                     {!readOnlyReport && currentStepIndex === 1 && ['Engineer', 'Admin'].includes(user?.role) && (
