@@ -11,7 +11,7 @@ const ECOSchema = new mongoose.Schema({
     changes: { type: mongoose.Schema.Types.Mixed, required: true },
 
     // ECO Pipeline State
-    status: { type: String, enum: ['new', 'approval', 'done'], default: 'new' },
+    status: { type: String, enum: ['draft', 'new', 'approval', 'done'], default: 'draft' },
 
     // Determines if the ECO forces a new version creation or an in-place edit
     versionUpdate: { type: Boolean, default: true },

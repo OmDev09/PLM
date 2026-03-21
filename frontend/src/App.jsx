@@ -1,46 +1,25 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import EngineerDashboard from './pages/EngineerDashboard';
-import ApproverDashboard from './pages/ApproverDashboard';
-import OperationsDashboard from './pages/OperationsDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import UnifiedDashboard from './pages/UnifiedDashboard';
+import { useAuth } from './context/AuthContext';
 
-const RoleRouter = () => {
-  const { user } = useAuth();
+const App = () => {
+  const { user, loading } = useAuth();
 
-  if (!user) return <Navigate to="/login" replace />;
-
-  switch (user.role) {
-    case 'Engineer': return <EngineerDashboard />;
-    case 'Approver': return <ApproverDashboard />;
-    case 'Operations': return <OperationsDashboard />;
-    case 'Admin': return <AdminDashboard />;
-    default: return <Navigate to="/login" replace />;
-  }
-};
-
-function AppRoutes() {
-  const { user } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 font-bold">Initializing Subsystems...</div>;
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
-      <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-      <Route path="/dashboard" element={<RoleRouter />} />
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+
+      <Route path="/dashboard" element={
+        user ? <UnifiedDashboard /> : <Navigate to="/login" />
+      } />
+
+      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
     </Routes>
   );
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
-  );
-}
+};
 
 export default App;
