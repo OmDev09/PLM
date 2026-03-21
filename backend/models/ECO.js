@@ -4,7 +4,7 @@ const ECOSchema = new mongoose.Schema({
     title: { type: String, required: true },
     type: { type: String, enum: ['product', 'bom'], required: true },
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    changes: { type: mongoose.Schema.Types.Mixed, required: true },
+    changes: { type: mongoose.Schema.Types.Mixed, default: {} },
     riskLevel: { type: String, enum: ['Low', 'Medium', 'High'], default: 'Low' },
 
     // Dynamic State Machine Graph
