@@ -54,8 +54,8 @@ const ProductList = () => {
                     <p className="text-sm text-slate-500 mt-1">Manage physical hardware frames across their complete lifecycle.</p>
                 </div>
                 {(user?.role === 'Engineer' || user?.role === 'Admin') && (
-                    <button onClick={() => setIsCreateModalOpen(true)} className="bg-slate-900 text-white hover:bg-slate-800 transition-colors px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm">
-                        <Plus size={16} /> New Product
+                    <button onClick={() => setIsCreateModalOpen(true)} className="bg-amber-400 text-slate-900 border border-amber-500 hover:bg-amber-500 hover:-translate-y-0.5 shadow-lg shadow-amber-500/20 transition-all duration-200 px-4 py-2 rounded-md font-bold text-sm flex items-center gap-2">
+                        <Plus size={16} className="text-slate-800" /> New Product
                     </button>
                 )}
             </div>
@@ -154,7 +154,7 @@ const ProductList = () => {
                         </form>
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
                             <button onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm">Discard</button>
-                            <button onClick={handleCreateProduct} className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-md hover:bg-slate-800 transition-colors shadow-sm">Mint Record</button>
+                            <button onClick={handleCreateProduct} className="px-4 py-2 text-sm font-bold text-slate-900 bg-amber-400 border border-amber-500 rounded-md hover:bg-amber-500 shadow-md shadow-amber-500/20 transition-colors">Mint Record</button>
                         </div>
                     </div>
                 </div>
