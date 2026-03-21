@@ -51,8 +51,8 @@ const ECOList = () => {
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Engineering Change Pipeline</h1>
                     <p className="text-sm text-slate-500 mt-1">Click any entry to view detailed payload comparisons and workflow actions.</p>
                 </div>
-                <button onClick={() => { setFormData({ ...formData, title: '', productId: '' }); setIsCreateOpen(true); }} className="bg-slate-900 text-white hover:bg-slate-800 transition-colors px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm">
-                    <Plus size={16} /> Draft New ECO
+                <button onClick={() => { setFormData({ ...formData, title: '', productId: '' }); setIsCreateOpen(true); }} className="bg-amber-400 text-slate-900 border border-amber-500 hover:bg-amber-500 hover:-translate-y-0.5 shadow-lg shadow-amber-500/20 transition-all duration-200 px-4 py-2 rounded-md font-bold text-sm flex items-center gap-2">
+                    <Plus size={16} className="text-slate-800" /> Draft New ECO
                 </button>
             </div>
 
@@ -107,7 +107,7 @@ const ECOList = () => {
                             <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 mt-6"><input type="checkbox" id="version" className="w-4 h-4 rounded text-slate-900 border-gray-300" checked={formData.versionUpdate} onChange={e => setFormData({ ...formData, versionUpdate: e.target.checked })} /><label htmlFor="version" className="text-sm font-bold text-slate-800 cursor-pointer">Require Version Update</label></div>
                         </div>
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
-                            <button onClick={() => handleCreateECO('draft')} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm w-full">Save to Drafts (Isolated)</button>
+                            <button onClick={() => handleCreateECO('draft')} className="px-4 py-2 text-sm font-bold text-slate-900 bg-amber-400 border border-amber-500 rounded-md hover:bg-amber-500 shadow-md shadow-amber-500/20 transition-colors w-full">Save to Drafts (Isolated)</button>
                         </div>
                     </div>
                 </div>

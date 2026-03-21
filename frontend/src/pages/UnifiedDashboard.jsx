@@ -48,9 +48,9 @@ const UnifiedDashboard = () => {
                     <nav className="space-y-1.5 px-3 shadow-sm-light">
                         <button
                             onClick={() => setActiveMenu('ecos')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${activeMenu === 'ecos' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 font-medium'}`}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${activeMenu === 'ecos' ? 'bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium border border-transparent'}`}
                         >
-                            <FileText size={16} /> Engineering Change Orders (ECOs)
+                            <FileText size={18} className={activeMenu === 'ecos' ? 'text-blue-600' : 'text-slate-400'} /> Engineering Change Orders (ECOs)
                         </button>
 
                         <div>
@@ -86,8 +86,7 @@ const UnifiedDashboard = () => {
                             </button>
                             {settingsExpanded && (
                                 <div className="pl-9 pr-3 mt-1 space-y-1">
-                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>ECO Stages</button>
-                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>Approvals</button>
+                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>ECO's Stages Approval</button>
                                 </div>
                             )}
                         </div>
@@ -96,41 +95,49 @@ const UnifiedDashboard = () => {
             </aside>
 
             {/* Main Container */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
 
                 {/* Top Navigation Bar */}
-                <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
-                    <div className="flex items-center gap-4 flex-1">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-500 hover:text-slate-800 focus:outline-none p-1 rounded-md hover:bg-gray-100 transition-colors">
-                            <Menu size={20} />
+                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm transition-all">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-slate-500 hover:text-blue-600 focus:outline-none p-2 rounded-lg hover:bg-blue-50 transition-colors">
+                            <Menu size={22} />
                         </button>
-                        <div className="hidden md:flex items-center gap-3 w-full max-w-sm ml-4 relative">
-                            <Search size={16} className="absolute left-3 text-slate-400" />
-                            <input type="text" placeholder={`Search ${menuTitle}...`} className="w-full pl-9 pr-4 py-1.5 bg-gray-100 border-transparent rounded-md text-sm focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" />
+                        <h1 className="text-lg font-bold text-slate-800 tracking-tight hidden sm:block border-l border-slate-200 pl-4">{menuTitle}</h1>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden lg:flex relative max-w-sm w-80 group">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <input type="text" placeholder="Search architecture..." className="w-full pl-9 pr-4 py-2 bg-slate-100 border border-transparent rounded-lg text-sm focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-slate-800 placeholder-slate-400" />
                         </div>
-                    </div>
 
-                    <div className="flex items-center justify-center flex-1 absolute left-1/2 -translate-x-1/2 pointer-events-none">
-                        <h1 className="text-base font-semibold text-slate-800">{menuTitle}</h1>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 flex-1 relative group cursor-pointer">
-                        <div className="text-sm font-medium text-slate-700 hidden sm:block">{user?.email}</div>
-                        <UserCircle size={28} className="text-slate-400" />
-
-                        {/* Profile Dropdown */}
-                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                            <div className="px-4 py-2 border-b border-gray-100">
-                                <p className="text-sm font-bold truncate">{user?.email}</p>
-                                <p className="text-xs text-gray-500 uppercase">{user?.role}</p>
+                        <div className="relative group cursor-pointer z-50">
+                            <div className="flex items-center gap-3">
+                                <div className="hidden sm:flex flex-col items-end">
+                                    <span className="text-sm font-bold text-slate-800 leading-tight">{user?.email || 'admin@plm.com'}</span>
+                                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest leading-tight">{user?.role || 'Admin'}</span>
+                                </div>
+                                <div className="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold shadow-sm">
+                                    {user?.email?.charAt(0).toUpperCase() || 'A'}
+                                </div>
                             </div>
-                            <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors">Log out</button>
+
+                            {/* Profile Dropdown */}
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all overflow-hidden origin-top-right transform scale-95 group-hover:scale-100 duration-200">
+                                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex flex-col items-center text-center">
+                                    <UserCircle size={32} className="text-slate-400 mb-2" />
+                                    <p className="text-sm font-bold truncate text-slate-800 w-full">{user?.email}</p>
+                                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-0.5">{user?.role}</p>
+                                </div>
+                                <button onClick={logout} className="w-full text-left px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors">Log out</button>
+                            </div>
                         </div>
                     </div>
                 </header>
 
                 {/* Dynamic Content */}
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50/50">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent relative custom-scrollbar">
                     {renderContent()}
                 </main>
             </div>
