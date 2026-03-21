@@ -7,6 +7,8 @@ import AuditReport from '../components/AuditReport';
 
 import BoMList from '../components/BoMList';
 
+import Settings from './Settings';
+
 const UnifiedDashboard = () => {
     const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -20,6 +22,7 @@ const UnifiedDashboard = () => {
             case 'products': return <ProductList />;
             case 'boms': return <BoMList />;
             case 'reporting': return <AuditReport />;
+            case 'settings': return <Settings />;
             default: return <ECOList />;
         }
     };
@@ -28,7 +31,8 @@ const UnifiedDashboard = () => {
         'ecos': 'Engineering Change Orders (ECOs)',
         'products': 'Master Data / Products',
         'boms': 'Master Data / Bills of Materials',
-        'reporting': 'System Reporting'
+        'reporting': 'System Reporting',
+        'settings': 'Workflow Graph & Pipeline Configuration'
     }[activeMenu];
 
     return (
@@ -82,8 +86,8 @@ const UnifiedDashboard = () => {
                             </button>
                             {settingsExpanded && (
                                 <div className="pl-9 pr-3 mt-1 space-y-1">
-                                    <button className="w-full text-left px-3 py-1.5 rounded-md text-sm text-slate-500 hover:bg-gray-50 transition-colors">ECO Stages</button>
-                                    <button className="w-full text-left px-3 py-1.5 rounded-md text-sm text-slate-500 hover:bg-gray-50 transition-colors">Approvals</button>
+                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>ECO Stages</button>
+                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>Approvals</button>
                                 </div>
                             )}
                         </div>

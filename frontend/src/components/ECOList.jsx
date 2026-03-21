@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Search, X, CheckCircle2, ChevronDown, Rocket } from 'lucide-react';
+import { Plus, Search, X, CheckCircle2, ChevronDown, Rocket, CheckSquare, FastForward } from 'lucide-react';
 
 const ECOList = () => {
     const { user } = useAuth();
@@ -48,24 +48,46 @@ const ECOList = () => {
         } catch (err) { alert(err.response?.data?.msg || 'Error starting ECO'); }
     };
 
-    const handlePushStage = async (eco) => {
+    const handleSign = async (eco) => {
         try {
-            if (eco.status === 'draft') await api.put(`/eco/${eco._id}`, { status: 'new' });
-            else if (eco.status === 'new') await api.post(`/eco/${eco._id}/approve`);
-            else if (eco.status === 'approval') await api.post(`/eco/${eco._id}/apply`);
+            await api.post(`/eco/${eco._id}/sign`);
             fetchData();
-        } catch (err) { alert(err.response?.data?.msg || 'Error updating stage'); }
+        } catch (err) { alert(err.response?.data?.msg || 'Failed to sign.'); }
     };
 
-    const StatusBadge = ({ status }) => {
-        const colors = {
-            draft: 'bg-gray-100 text-gray-600 border-gray-200',
-            new: 'bg-white border-blue-200 text-blue-700',
-            approval: 'bg-orange-50 text-orange-700 border-orange-200',
-            done: 'bg-green-50 text-green-700 border-green-200',
-        };
-        const labels = { draft: 'Draft', new: 'New', approval: 'In Progress (CCB)', done: 'Approved' };
-        return <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors[status]}`}>{labels[status]}</span>
+    const handleAdvance = async (eco) => {
+        try {
+            await api.post(`/eco/${eco._id}/advance`);
+            fetchData();
+        } catch (err) { alert(err.response?.data?.msg || 'Cannot advance routing graph.'); }
+    };
+
+    const DynamicBadge = ({ stage }) => {
+        if (!stage) return <span className="bg-gray-100 text-gray-400 px-2 py-0.5 text-xs rounded-full">Orphaned</span>;
+        if (stage.isFinal) return <span className="bg-green-50 border border-green-200 text-green-700 px-2.5 py-0.5 text-xs font-semibold rounded-full">{stage.name}</span>;
+        if (stage.isDraft) return <span className="bg-gray-100 border border-gray-200 text-gray-600 px-2.5 py-0.5 text-xs font-semibold rounded-full">{stage.name}</span>;
+        return <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-0.5 text-xs font-semibold rounded-full">{stage.name}</span>;
+    };
+
+    const renderActions = (eco) => {
+        if (!eco.stage) return null;
+        if (eco.stage.isFinal) return null;
+        if (eco.stage.isDraft) {
+            return <button onClick={() => handleAdvance(eco)} className="text-slate-900 border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded-md font-medium text-[11px] flex items-center gap-1"><Rocket size={12} /> Start Procedure</button>;
+        }
+
+        const iAssigned = eco.signatures?.find(s => s.user._id === user.id && s.stage === eco.stage._id);
+
+        return (
+            <div className="flex justify-end gap-2">
+                {!iAssigned ? (
+                    <button onClick={() => handleSign(eco)} className="text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md font-medium text-[11px] flex items-center gap-1"><CheckSquare size={12} /> Sign</button>
+                ) : (
+                    <span className="text-gray-400 border border-gray-100 px-2 py-1 rounded-md text-[11px] flex items-center gap-1 cursor-default"><CheckSquare size={12} /> Signed</span>
+                )}
+                <button onClick={() => handleAdvance(eco)} className="text-slate-700 border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded-md font-medium text-[11px] flex items-center gap-1"><FastForward size={12} /> Forward</button>
+            </div>
+        );
     };
 
     const filteredEcos = ecos.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -102,7 +124,7 @@ const ECOList = () => {
                                 <th className="px-6 py-3">Target</th>
                                 <th className="px-6 py-3">Type</th>
                                 <th className="px-6 py-3">Author</th>
-                                <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-3">Stage Node</th>
                                 <th className="px-6 py-3 text-right">Action</th>
                             </tr>
                         </thead>
@@ -113,13 +135,9 @@ const ECOList = () => {
                                     <td className="px-6 py-4">{eco.productId?.name} <span className="text-xs text-gray-400">v{eco.productId?.version}</span></td>
                                     <td className="px-6 py-4 capitalize">{eco.type}</td>
                                     <td className="px-6 py-4">{eco.createdBy?.email}</td>
-                                    <td className="px-6 py-4"><StatusBadge status={eco.status} /></td>
+                                    <td className="px-6 py-4"><DynamicBadge stage={eco.stage} /></td>
                                     <td className="px-6 py-4 text-right">
-                                        {eco.status !== 'done' && (
-                                            <button onClick={() => handlePushStage(eco)} className="text-blue-600 hover:text-blue-800 font-medium text-xs">
-                                                {eco.status === 'draft' ? 'Start ECO' : eco.status === 'new' ? 'Approve' : 'Apply Changes'}
-                                            </button>
-                                        )}
+                                        {renderActions(eco)}
                                     </td>
                                 </tr>
                             ))}
