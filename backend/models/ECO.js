@@ -13,6 +13,9 @@ const ECOSchema = new mongoose.Schema({
     // ECO Pipeline State
     status: { type: String, enum: ['new', 'approval', 'done'], default: 'new' },
 
+    // Determines if the ECO forces a new version creation or an in-place edit
+    versionUpdate: { type: Boolean, default: true },
+
     // Audit Trail
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
