@@ -41,5 +41,28 @@ router.post('/login', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+// POST api/auth/register
+// Dynamic Signup Route (Default role: Engineer)
+router.post('/register', async (req, res) => {
+    try {
+        const { email, loginId, password } = req.body;
+        let user = await User.findOne({ email });
+        if (user) return res.status(400).json({ msg: 'User already exists' });
+
+        user = new User({ email, loginId, password, role: 'Engineer' });
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+        await user.save();
+
+        const payload = { user: { id: user.id, role: user.role } };
+        jwt.sign(payload, process.env.JWT_SECRET || 'hackathon_secret_123', { expiresIn: '5h' }, (err, token) => {
+            if (err) throw err;
+            res.json({ token, role: user.role, email: user.email });
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 module.exports = router;
