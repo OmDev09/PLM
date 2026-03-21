@@ -50,12 +50,10 @@ const Login = () => {
                     </div>
 
                     {error && (
-                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm mb-5 border border-red-500/20 flex items-center gap-2 font-medium">
+                        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm mb-6 border border-red-500/20 flex items-center gap-2 font-medium">
                             <span className="shrink-0 text-lg">⚠️</span> {error}
                         </motion.div>
                     )}
-
-
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
