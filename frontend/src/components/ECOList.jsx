@@ -11,6 +11,9 @@ const ECOList = () => {
     const [products, setProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [stageFilter, setStageFilter] = useState('all');
+    const [productFilter, setProductFilter] = useState('all');
+    const [riskFilter, setRiskFilter] = useState('all');
+    const [dateFilter, setDateFilter] = useState('all');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [activeEcoId, setActiveEcoId] = useState(null);
 
@@ -51,18 +54,53 @@ const ECOList = () => {
         return <span className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 px-2.5 py-0.5 text-xs font-semibold rounded-full shadow-sm">{stage.name}</span>;
     };
 
-    const uniqueStages = ['all', 'Draft', ...new Set(ecos.map(e => e.stage?.name).filter(Boolean))];
+    const RiskBadge = ({ level }) => {
+        const lv = level || 'Low';
+        if (lv === 'High') return <span className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 px-2 py-0.5 text-[10px] uppercase font-bold rounded flex items-center shadow-sm w-max gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> HIGH</span>;
+        if (lv === 'Medium') return <span className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 text-[10px] uppercase font-bold rounded flex items-center shadow-sm w-max gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span> MEDIUM</span>;
+        return <span className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-[10px] uppercase font-bold rounded flex items-center shadow-sm w-max gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> LOW</span>;
+    };
+
+    const predefinedStages = ['all', 'Draft', 'New', 'Approval', 'Done'];
+    const dynamicStages = new Set(ecos.map(e => {
+        if (e.status === 'Draft') return 'Draft';
+        if (e.status === 'Completed' || e.stage?.isFinal) return 'Done';
+        return e.stage?.name || 'New';
+    }).filter(Boolean));
+    const uniqueStages = Array.from(new Set([...predefinedStages, ...dynamicStages]));
+    const uniqueProducts = ['all', ...new Set(ecos.map(e => e.productId?.name).filter(Boolean))];
+    const uniqueRisks = ['all', 'Low', 'Medium', 'High'];
+    const dateOptions = [
+        { value: 'all', label: 'All Time' },
+        { value: 'today', label: 'Today' },
+        { value: '7', label: 'Last 7 Days' },
+        { value: '30', label: 'Last 30 Days' },
+    ];
 
     const filteredEcos = ecos.filter(e => {
-        const stageName = e.status === 'Draft' ? 'Draft' : (e.stage?.name || 'New');
+        const stageName = e.status === 'Draft' ? 'Draft' : (e.status === 'Completed' || e.stage?.isFinal ? 'Done' : (e.stage?.name || 'New'));
 
         // Hide Draft and New stages from Approvers completely
         if (user?.role === 'Approver' && (e.status === 'Draft' || stageName === 'New' || e.stage?.sequence < 3)) return false;
 
-        const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStage = stageFilter === 'all' || stageName === stageFilter;
+        const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            e.productId?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        return matchesSearch && matchesStage;
+        const matchesStage = stageFilter === 'all' || stageName === stageFilter;
+        const matchesProduct = productFilter === 'all' || e.productId?.name === productFilter;
+        const matchesRisk = riskFilter === 'all' || e.riskLevel === riskFilter;
+
+        let matchesDate = true;
+        if (dateFilter !== 'all') {
+            const ecoDate = new Date(e.createdAt);
+            const now = new Date();
+            const diffDays = (now - ecoDate) / (1000 * 60 * 60 * 24);
+            if (dateFilter === 'today' && ecoDate.toDateString() !== now.toDateString()) matchesDate = false;
+            else if (dateFilter === '7' && diffDays > 7) matchesDate = false;
+            else if (dateFilter === '30' && diffDays > 30) matchesDate = false;
+        }
+
+        return matchesSearch && matchesStage && matchesProduct && matchesRisk && matchesDate;
     });
 
     return (
@@ -78,21 +116,29 @@ const ECOList = () => {
             </div>
 
             <div className="bg-white dark:bg-slate-900/40 dark:backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden transition-colors">
-                <div className="p-4 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row gap-4 shrink-0 transition-colors">
-                    <div className="relative max-w-sm w-full">
+                <div className="p-5 border-b border-gray-100 dark:border-white/5 space-y-4 shrink-0 transition-colors">
+                    <div className="relative w-full">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                        <input type="text" placeholder="Search ECOs..." className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-white/10 rounded-md text-sm outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-500/20 focus:border-slate-400 dark:focus:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all shadow-sm" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                        <input type="text" placeholder="Search ECOs by title or target asset..." className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/20 border border-gray-200 dark:border-white/10 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all shadow-inner" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                     </div>
-                    <select
-                        value={stageFilter}
-                        onChange={e => setStageFilter(e.target.value)}
-                        className="px-4 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-white/10 rounded-md text-sm outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-500/20 focus:border-slate-400 dark:focus:border-slate-500 text-slate-700 dark:text-white shadow-sm font-medium w-full sm:w-auto transition-colors"
-                    >
-                        <option value="all">All Workflow Stages</option>
-                        {uniqueStages.filter(s => s !== 'all').map(stage => (
-                            <option key={stage} value={stage}>{stage}</option>
-                        ))}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block mr-1">Filter</span>
+                        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-md text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 dark:text-slate-300 shadow-sm transition-colors cursor-pointer">
+                            <option value="all">Stage: All</option>
+                            {uniqueStages.filter(s => s !== 'all').map(stage => <option key={stage} value={stage}>Stage: {stage}</option>)}
+                        </select>
+                        <select value={productFilter} onChange={e => setProductFilter(e.target.value)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-md text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 dark:text-slate-300 shadow-sm transition-colors cursor-pointer">
+                            <option value="all">Product: All</option>
+                            {uniqueProducts.filter(p => p !== 'all').map(p => <option key={p} value={p}>Target: {p}</option>)}
+                        </select>
+                        <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-md text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 dark:text-slate-300 shadow-sm transition-colors cursor-pointer">
+                            <option value="all">Risk: All</option>
+                            {uniqueRisks.filter(r => r !== 'all').map(r => <option key={r} value={r}>Risk: {r}</option>)}
+                        </select>
+                        <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-md text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 dark:text-slate-300 shadow-sm transition-colors cursor-pointer">
+                            {dateOptions.map(d => <option key={d.value} value={d.value}>Date: {d.label}</option>)}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="overflow-auto flex-1">
@@ -102,6 +148,7 @@ const ECOList = () => {
                                 <th className="px-6 py-3">ECO Title</th>
                                 <th className="px-6 py-3">Type</th>
                                 <th className="px-6 py-3">Target Asset</th>
+                                <th className="px-6 py-3">Risk Level</th>
                                 <th className="px-6 py-3">Workflow Node</th>
                                 <th className="px-6 py-3">Author</th>
                             </tr>
@@ -112,11 +159,12 @@ const ECOList = () => {
                                     <td className="px-6 py-4 font-bold text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400">{eco.title}</td>
                                     <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-[11px] text-slate-600 dark:text-slate-400 uppercase font-mono border border-slate-200 dark:border-white/10 tracking-wider font-semibold">{eco.type}</span></td>
                                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-medium">{eco.productId?.name} <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-1">v{eco.productId?.version}</span></td>
+                                    <td className="px-6 py-4"><RiskBadge level={eco.riskLevel} /></td>
                                     <td className="px-6 py-4"><DynamicBadge stage={eco.stage} status={eco.status} /></td>
                                     <td className="px-6 py-4">{eco.createdBy?.email}</td>
                                 </tr>
                             ))}
-                            {filteredEcos.length === 0 && (<tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500 dark:text-slate-500">No Pipeline Data Available</td></tr>)}
+                            {filteredEcos.length === 0 && (<tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500 dark:text-slate-500">No Pipeline Data Available</td></tr>)}
                         </tbody>
                     </table>
                 </div>

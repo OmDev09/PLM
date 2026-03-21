@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Search, UserCircle, FileText, Database, Settings as SettingsIcon, ChevronDown, ChevronRight, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ECOList from '../components/ECOList';
 import ProductList from '../components/ProductList';
 import ECOResport from '../components/ECOResport';
@@ -13,9 +14,60 @@ import Settings from './Settings';
 const UnifiedDashboard = () => {
     const { user, logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [activeMenu, setActiveMenu] = useState('dashboard');
+    const [activeMenu, setActiveMenu] = useState(() => localStorage.getItem('activeMenu') || 'dashboard');
+
+    useEffect(() => {
+        localStorage.setItem('activeMenu', activeMenu);
+    }, [activeMenu]);
     const [masterExpanded, setMasterExpanded] = useState(true);
     const [settingsExpanded, setSettingsExpanded] = useState(false);
+
+    const renderSectionLabel = (label) => (
+        <div className="px-5 pt-5 pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">
+            {label}
+        </div>
+    );
+
+    const renderNavLink = (id, icon, label) => {
+        const isActive = activeMenu === id;
+        return (
+            <div className="px-2" key={id}>
+                <button onClick={() => setActiveMenu(id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-all duration-200 relative group ${isActive ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 font-medium'}`}>
+                    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-1 bg-blue-600 rounded-r-md"></div>}
+                    <div className="w-5 flex justify-center shrink-0">
+                        {React.cloneElement(icon, { size: 18, className: isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 transition-colors' })}
+                    </div>
+                    <span className="truncate">{label}</span>
+                </button>
+            </div>
+        );
+    };
+
+    const renderParentLink = (id, icon, label, isExpanded, toggleExpanded) => (
+        <div className="px-2" key={id}>
+            <button onClick={toggleExpanded} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[14px] transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 font-medium group">
+                <div className="flex items-center gap-3">
+                    <div className="w-5 flex justify-center shrink-0">
+                        {React.cloneElement(icon, { size: 18, className: 'text-slate-400 dark:text-slate-500 transition-colors' })}
+                    </div>
+                    <span className="truncate">{label}</span>
+                </div>
+                {isExpanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+            </button>
+        </div>
+    );
+
+    const renderSubNavLink = (id, label) => {
+        const isActive = activeMenu === id;
+        return (
+            <div className="px-2" key={id}>
+                <button onClick={() => setActiveMenu(id)} className={`w-full text-left pl-[44px] pr-3 py-2 rounded-lg text-[13px] transition-all duration-200 relative ${isActive ? 'bg-blue-50/50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:bg-gray-200/30 dark:hover:bg-slate-800/30 hover:text-slate-800 dark:hover:text-slate-200 font-medium'}`}>
+                    {isActive && <div className="absolute left-[22px] top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-blue-600"></div>}
+                    {label}
+                </button>
+            </div>
+        );
+    };
 
     const renderContent = () => {
         switch (activeMenu) {
@@ -39,73 +91,53 @@ const UnifiedDashboard = () => {
     }[activeMenu] || 'System Overview';
 
     return (
-        <div className="flex h-screen bg-gray-50 text-slate-900 font-sans overflow-hidden">
-
-            {/* Sidebar */}
-            <aside className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${sidebarOpen ? 'w-64' : 'w-0 hidden'}`}>
-                <div className="h-14 flex items-center px-6 border-b border-gray-200 shrink-0">
-                    <span className="font-extrabold text-lg text-slate-800 tracking-tight">NEXUS PLM</span>
+        <div className="flex h-screen bg-[#f8fafc] dark:bg-[#0a0a0b] text-slate-900 dark:text-slate-100 font-sans overflow-hidden transition-colors duration-150">
+            <motion.aside
+                initial={false}
+                animate={{ width: sidebarOpen ? 260 : 0, opacity: sidebarOpen ? 1 : 0 }}
+                className="bg-[#f8fafc] dark:bg-slate-900/40 dark:backdrop-blur-2xl border-r border-slate-200 dark:border-white/10 flex flex-col overflow-hidden shrink-0 z-50 shadow-sm"
+            >
+                <div className="h-16 flex items-center px-6 border-b border-transparent dark:border-white/10 shrink-0 w-[260px]">
+                    <span className="font-extrabold text-[15px] text-slate-800 dark:text-white tracking-tight">NEXUS PLM</span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto py-4">
-                    <nav className="space-y-1.5 px-3 shadow-sm-light">
-                        <button
-                            onClick={() => setActiveMenu('dashboard')}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${activeMenu === 'dashboard' ? 'bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium border border-transparent'}`}
-                        >
-                            <Activity size={18} className={activeMenu === 'dashboard' ? 'text-blue-600' : 'text-slate-400'} /> System Overview
-                        </button>
+                <div className="flex-1 overflow-y-auto py-4 w-[260px] custom-scrollbar">
+                    <nav className="space-y-1">
+                        {renderSectionLabel('Main')}
+                        {renderNavLink('dashboard', <Activity />, 'System Overview')}
+                        {renderNavLink('ecos', <FileText />, 'Engineering Change Orders')}
+                        {renderNavLink('reporting', <Activity />, 'Reporting')}
 
-                        <button
-                            onClick={() => setActiveMenu('ecos')}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${activeMenu === 'ecos' ? 'bg-blue-50 text-blue-700 font-bold shadow-sm border border-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium border border-transparent'}`}
-                        >
-                            <FileText size={18} className={activeMenu === 'ecos' ? 'text-blue-600' : 'text-slate-400'} /> Engineering Change Orders (ECOs)
-                        </button>
-
+                        {renderSectionLabel('Data')}
                         <div>
-                            <button
-                                onClick={() => setMasterExpanded(!masterExpanded)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors text-slate-600 hover:bg-gray-50 hover:text-slate-900 font-medium`}
-                            >
-                                <div className="flex items-center gap-3"><Database size={16} /> Master Data</div>
-                                {masterExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </button>
-                            {masterExpanded && (
-                                <div className="pl-9 pr-3 mt-1 space-y-1">
-                                    <button onClick={() => setActiveMenu('boms')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'boms' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>Bills of Materials</button>
-                                    <button onClick={() => setActiveMenu('products')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'products' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>Products</button>
-                                </div>
-                            )}
+                            {renderParentLink('master', <Database />, 'Master Data', masterExpanded, () => setMasterExpanded(!masterExpanded))}
+                            <AnimatePresence>
+                                {masterExpanded && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-0.5 mt-0.5 overflow-hidden">
+                                        {renderSubNavLink('boms', 'Bills of Materials')}
+                                        {renderSubNavLink('products', 'Products')}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        <button
-                            onClick={() => setActiveMenu('reporting')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${activeMenu === 'reporting' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 font-medium'}`}
-                        >
-                            <Activity size={16} /> Reporting
-                        </button>
-
+                        {renderSectionLabel('Settings')}
                         <div>
-                            <button
-                                onClick={() => setSettingsExpanded(!settingsExpanded)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors text-slate-600 hover:bg-gray-50 hover:text-slate-900 font-medium`}
-                            >
-                                <div className="flex items-center gap-3"><SettingsIcon size={16} /> Settings</div>
-                                {settingsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </button>
-                            {settingsExpanded && (
-                                <div className="pl-9 pr-3 mt-1 space-y-1">
-                                    <button onClick={() => setActiveMenu('settings')} className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${activeMenu === 'settings' ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:bg-gray-50 hover:text-slate-800'}`}>ECO's Stages Approval</button>
-                                </div>
-                            )}
+                            {renderParentLink('settings_expand', <SettingsIcon />, 'Settings', settingsExpanded, () => setSettingsExpanded(!settingsExpanded))}
+                            <AnimatePresence>
+                                {settingsExpanded && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-0.5 mt-0.5 overflow-hidden">
+                                        {renderSubNavLink('settings', 'ECO Stages')}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </nav>
                 </div>
-            </aside>
+            </motion.aside>
 
             {/* Main Container */}
-            <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent">
 
                 {/* Top Navigation Bar */}
                 <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm transition-all">

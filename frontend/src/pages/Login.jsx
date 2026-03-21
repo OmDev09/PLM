@@ -79,7 +79,7 @@ const Login = () => {
     };
 
     return (
-        <div className="relative h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden flex font-sans transition-colors duration-500">
+        <div className="relative h-screen w-full bg-slate-50 dark:bg-[#0a0a0b] overflow-hidden flex font-sans transition-colors duration-200">
 
             <div className="relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
 
