@@ -7,6 +7,7 @@ import ECOList from '../components/ECOList';
 import ProductList from '../components/ProductList';
 import DashboardOverview from '../components/DashboardOverview';
 import BoMList from '../components/BoMList';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const EngineerDashboard = () => {
     const { user, logout } = useAuth();
@@ -131,6 +132,7 @@ const EngineerDashboard = () => {
                         </div>
 
                         <ThemeToggle />
+                        <NotificationDropdown />
 
                         <div className="relative cursor-pointer" onMouseEnter={() => setProfileOpen(true)} onMouseLeave={() => setProfileOpen(false)}>
                             <div className="flex items-center gap-3">

@@ -6,6 +6,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import ECOList from '../components/ECOList';
 import ECOResport from '../components/ECOResport';
 import DashboardOverview from '../components/DashboardOverview';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const ApproverDashboard = () => {
     const { user, logout } = useAuth();
@@ -89,6 +90,7 @@ const ApproverDashboard = () => {
                         </div>
 
                         <ThemeToggle />
+                        <NotificationDropdown />
 
                         <div className="relative cursor-pointer" onMouseEnter={() => setProfileOpen(true)} onMouseLeave={() => setProfileOpen(false)}>
                             <div className="flex items-center gap-3">

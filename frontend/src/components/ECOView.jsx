@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { X, CheckSquare, FastForward, ExternalLink, Activity, Save, Play, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
     const { user } = useAuth();
@@ -283,198 +284,227 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
     const removeBoMOperation = (idx) => setEditForm(prev => ({ ...prev, operations: prev.operations.filter((_, i) => i !== idx) }));
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-900/80 backdrop-blur-sm transition-colors" onClick={onClose}></div>
-            <div className="bg-slate-50 dark:bg-slate-900 border border-transparent dark:border-white/10 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] relative z-10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 transition-colors">
+        <AnimatePresence>
+            <motion.div
+                key="eco-modal-backdrop"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+            >
+                <motion.div
+                    className="absolute inset-0 bg-slate-900/60 dark:bg-slate-900/80 backdrop-blur-sm transition-colors"
+                    onClick={onClose}
+                />
+                <motion.div
+                    key="eco-modal-card"
+                    initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.94, y: 20 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                    className="bg-slate-50 dark:bg-slate-900 border border-transparent dark:border-white/10 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] relative z-10 flex flex-col overflow-hidden transition-colors"
+                >
 
-                {showConfirm && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm rounded-xl animate-in fade-in duration-200">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Confirm Submission</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to send this ECO for approval? You will lose edit access once sent.</p>
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowConfirm(false)} disabled={isSending} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50">Cancel</button>
-                                <button onClick={handleSendApproval} disabled={isSending} className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md flex items-center gap-2 transition-colors disabled:opacity-75 disabled:cursor-not-allowed">
-                                    {isSending ? <><Activity size={16} className="animate-spin" /> Sending...</> : 'Confirm & Send'}
+                    {showConfirm && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm rounded-xl animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Confirm Submission</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to send this ECO for approval? You will lose edit access once sent.</p>
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setShowConfirm(false)} disabled={isSending} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50">Cancel</button>
+                                    <button onClick={handleSendApproval} disabled={isSending} className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md flex items-center gap-2 transition-colors disabled:opacity-75 disabled:cursor-not-allowed">
+                                        {isSending ? <><Activity size={16} className="animate-spin" /> Sending...</> : 'Confirm & Send'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header Card */}
+                    <div className="bg-white dark:bg-slate-900/60 border-b dark:border-white/10 px-6 py-4 flex items-center justify-between shrink-0 transition-colors">
+                        <div>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{title}</h2>
+                                <RiskBadge level={riskLevel} />
+                            </div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Target Type: <span className="uppercase font-semibold text-slate-700 dark:text-slate-300">{type}</span></p>
+                        </div>
+
+                        {/* Visual Stepper */}
+                        <div className="hidden md:flex items-center space-x-2">
+                            {steps.map((s, idx) => (
+                                <React.Fragment key={s}>
+                                    <div className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full border transition-colors ${idx === currentStepIndex ? 'bg-blue-600 dark:bg-blue-600 text-white border-blue-700 dark:border-blue-500 shadow-sm' : idx < currentStepIndex ? 'bg-green-100 dark:bg-emerald-500/20 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                                        {s}
+                                    </div>
+                                    {idx < steps.length - 1 && <div className={`w-6 h-0.5 transition-colors ${idx < currentStepIndex ? 'bg-green-200 dark:bg-emerald-500/40' : 'bg-slate-200 dark:bg-slate-700'}`}></div>}
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors"><X size={20} /></button>
+                    </div>
+
+                    {/* Top Action Bar */}
+                    <div className="px-6 py-3 bg-white dark:bg-slate-900/60 border-b dark:border-white/10 flex items-center gap-3 shrink-0 transition-colors">
+                        <button onClick={() => setViewMode('details')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'details' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Form Details</button>
+                        <button onClick={() => setViewMode('changes')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'changes' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-400'}`}><Activity size={16} /> Changes Detail</button>
+
+                        <div className="flex-1"></div>
+
+                        {(isDraft || currentStepIndex === 1) && ['Engineer', 'Admin'].includes(user?.role) && (
+                            <button onClick={() => {
+                                setEditForm({
+                                    ...targetCurrent,
+                                    ...proposedChanges,
+                                    components: JSON.parse(JSON.stringify(proposedChanges?.components || targetCurrent?.components || [])),
+                                    operations: JSON.parse(JSON.stringify(proposedChanges?.operations || targetCurrent?.operations || []))
+                                });
+                                setViewMode('edit');
+                            }} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors border ${viewMode === 'edit' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' : 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <ExternalLink size={14} /> Edit Proposed {type?.toLowerCase() === 'product' ? 'Product' : 'BoM'}
+                            </button>
+                        )}
+
+                        {!readOnlyReport && currentStepIndex === 2 && ['Approver', 'Admin'].includes(user?.role) && (
+                            stage?.approvals?.length > 0 ? (
+                                <button onClick={handleApprove} className="bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+                                    <CheckSquare size={14} /> APPROVE
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                            ) : (
+                                <button onClick={handleApprove} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+                                    <CheckSquare size={14} /> VALIDATE
+                                </button>
+                            )
+                        )}
 
-                {/* Header Card */}
-                <div className="bg-white dark:bg-slate-900/60 border-b dark:border-white/10 px-6 py-4 flex items-center justify-between shrink-0 transition-colors">
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{title}</h2>
-                            <RiskBadge level={riskLevel} />
-                        </div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Target Type: <span className="uppercase font-semibold text-slate-700 dark:text-slate-300">{type}</span></p>
-                    </div>
-
-                    {/* Visual Stepper */}
-                    <div className="hidden md:flex items-center space-x-2">
-                        {steps.map((s, idx) => (
-                            <React.Fragment key={s}>
-                                <div className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full border transition-colors ${idx === currentStepIndex ? 'bg-blue-600 dark:bg-blue-600 text-white border-blue-700 dark:border-blue-500 shadow-sm' : idx < currentStepIndex ? 'bg-green-100 dark:bg-emerald-500/20 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                                    {s}
-                                </div>
-                                {idx < steps.length - 1 && <div className={`w-6 h-0.5 transition-colors ${idx < currentStepIndex ? 'bg-green-200 dark:bg-emerald-500/40' : 'bg-slate-200 dark:bg-slate-700'}`}></div>}
-                            </React.Fragment>
-                        ))}
-                    </div>
-
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors"><X size={20} /></button>
-                </div>
-
-                {/* Top Action Bar */}
-                <div className="px-6 py-3 bg-white dark:bg-slate-900/60 border-b dark:border-white/10 flex items-center gap-3 shrink-0 transition-colors">
-                    <button onClick={() => setViewMode('details')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'details' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>Form Details</button>
-                    <button onClick={() => setViewMode('changes')} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'changes' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-400'}`}><Activity size={16} /> Changes Detail</button>
-
-                    <div className="flex-1"></div>
-
-                    {(isDraft || currentStepIndex === 1) && ['Engineer', 'Admin'].includes(user?.role) && (
-                        <button onClick={() => {
-                            setEditForm({
-                                ...targetCurrent,
-                                ...proposedChanges,
-                                components: JSON.parse(JSON.stringify(proposedChanges?.components || targetCurrent?.components || [])),
-                                operations: JSON.parse(JSON.stringify(proposedChanges?.operations || targetCurrent?.operations || []))
-                            });
-                            setViewMode('edit');
-                        }} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors border ${viewMode === 'edit' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' : 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                            <ExternalLink size={14} /> Edit Proposed {type?.toLowerCase() === 'product' ? 'Product' : 'BoM'}
-                        </button>
-                    )}
-
-                    {!readOnlyReport && currentStepIndex === 2 && ['Approver', 'Admin'].includes(user?.role) && (
-                        stage?.approvals?.length > 0 ? (
-                            <button onClick={handleApprove} className="bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                                <CheckSquare size={14} /> APPROVE
-                            </button>
-                        ) : (
-                            <button onClick={handleApprove} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                                <CheckSquare size={14} /> VALIDATE
-                            </button>
-                        )
-                    )}
-
-                    {!readOnlyReport && currentStepIndex === 1 && ['Engineer', 'Admin'].includes(user?.role) && (
-                        <div className="group relative">
-                            <button onClick={() => setShowConfirm(true)} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-5 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-all shadow-sm focus:ring-4 focus:ring-blue-500/30 outline-none">
-                                <FastForward size={14} /> SEND FOR APPROVAL
-                            </button>
-                            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold px-3 py-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                Submit this change request for approval
-                            </div>
-                        </div>
-                    )}
-
-                    {!readOnlyReport && isDraft && ['Engineer', 'Admin'].includes(user?.role) && (
-                        <button onClick={handleStart} className="bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-                            <Play size={14} /> START
-                        </button>
-                    )}
-                </div>
-
-                {/* View Body */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900/50 custom-scrollbar transition-colors">
-                    {viewMode === 'details' ? (
-                        <div className="max-w-2xl mx-auto space-y-6">
-                            <div className="bg-white dark:bg-slate-800/40 border dark:border-white/10 rounded-xl p-6 shadow-sm transition-colors">
-                                <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 uppercase text-xs tracking-wider transition-colors">ECO Form Data</h3>
-                                <div className="space-y-4">
-                                    <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">ECO Title</label><input type="text" value={title} readOnly={!isDraft} className="w-full mt-1 border-b dark:border-white/10 py-1 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 bg-transparent text-slate-900 dark:text-white transition-colors" /></div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Type</label><input type="text" value={type.toUpperCase()} readOnly className="w-full mt-1 border-b dark:border-white/10 py-1 bg-transparent text-slate-500 dark:text-slate-400 transition-colors" /></div>
-                                        <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Target Identifier (v{targetCurrent?.version})</label><input type="text" value={targetCurrent?.name || targetCurrent?.reference || ''} readOnly className="w-full mt-1 border-b dark:border-white/10 py-1 bg-transparent text-slate-500 dark:text-slate-400 transition-colors" /></div>
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-4 text-slate-800 dark:text-white transition-colors"><input type="checkbox" checked={versionUpdate} readOnly className="default:ring-2" /> <span className="text-sm font-semibold">Require Version Update upon Final Approval</span></div>
+                        {!readOnlyReport && currentStepIndex === 1 && ['Engineer', 'Admin'].includes(user?.role) && (
+                            <div className="group relative">
+                                <button onClick={() => setShowConfirm(true)} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-5 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-all shadow-sm focus:ring-4 focus:ring-blue-500/30 outline-none">
+                                    <FastForward size={14} /> SEND FOR APPROVAL
+                                </button>
+                                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold px-3 py-1.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    Submit this change request for approval
                                 </div>
                             </div>
-                            {isDraft || currentStepIndex === 1 ? <div className="text-sm text-slate-500 dark:text-slate-500 text-center italic transition-colors">Fields remain mutable until submission for formal pipeline approval.</div> : null}
-                        </div>
-                    ) : viewMode === 'edit' ? (
-                        <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800/40 border border-blue-100 dark:border-blue-500/20 rounded-xl p-6 shadow-md shadow-blue-50 dark:shadow-none transition-colors">
-                            <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 flex items-center gap-2 transition-colors">
-                                <Activity size={18} className="text-blue-600 dark:text-blue-400" /> Contextual Edit: Proposed Changes
-                            </h3>
-                            {type?.toLowerCase() === 'product' && editForm ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Sales Price</label><input type="number" value={editForm.price || ''} onChange={e => setEditForm({ ...editForm, price: parseFloat(e.target.value) })} className="w-full mt-1 border border-gray-300 dark:border-white/10 bg-transparent dark:bg-slate-900 text-slate-800 dark:text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" /></div>
-                                        <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Cost Price</label><input type="number" value={editForm.costPrice || ''} onChange={e => setEditForm({ ...editForm, costPrice: parseFloat(e.target.value) })} className="w-full mt-1 border border-gray-300 dark:border-white/10 bg-transparent dark:bg-slate-900 text-slate-800 dark:text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" /></div>
-                                    </div>
-                                    <button onClick={handleSaveContextualEdits} className="mt-6 bg-blue-600 dark:bg-indigo-600 text-white px-4 py-2 rounded-md font-bold text-sm hover:bg-blue-700 dark:hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2">
-                                        <Save size={16} /> Save Proposed Payload
-                                    </button>
-                                </div>
-                            ) : type?.toLowerCase() === 'bom' && editForm ? (
-                                <div className="space-y-6">
-                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 p-3 rounded-lg text-sm text-blue-800 dark:text-blue-300 mb-4 transition-colors">
-                                        <strong>Notice:</strong> You are editing this BoM in ECO mode. Changes are saved as a proposal and will <em>not</em> modify live master data until Final Approval.
-                                    </div>
+                        )}
 
-                                    {/* Components Table */}
-                                    <div>
-                                        <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2">Components</h4>
-                                        <table className="w-full text-left text-sm border border-gray-200 dark:border-white/10 rounded overflow-hidden">
-                                            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs uppercase">
-                                                <tr><th className="px-3 py-2">Name</th><th className="px-3 py-2 w-24">Qty</th><th className="px-2 py-2 w-10"></th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                                                {(editForm.components || []).map((c, idx) => (
-                                                    <tr key={idx} className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                        <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="Component Name" value={c.name} onChange={e => updateBoMComponent(idx, 'name', e.target.value)} /></td>
-                                                        <td className="px-3 py-1.5"><input type="number" className="w-full bg-transparent outline-none dark:text-white font-mono" value={c.quantity} onChange={e => updateBoMComponent(idx, 'quantity', Number(e.target.value))} /></td>
-                                                        <td className="px-2 py-1.5 text-center"><button onClick={() => removeBoMComponent(idx)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button></td>
-                                                    </tr>
-                                                ))}
-                                                {(editForm.components || []).length === 0 && <tr><td colSpan="3" className="p-3 text-center text-slate-500 text-xs">No components defined.</td></tr>}
-                                            </tbody>
-                                        </table>
-                                        <button onClick={addBoMComponent} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-xs font-bold mt-2 flex items-center gap-1"><Plus size={14} /> Add Component</button>
+                        {!readOnlyReport && isDraft && ['Engineer', 'Admin'].includes(user?.role) && (
+                            <button onClick={handleStart} className="bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white px-4 py-1.5 rounded-md text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+                                <Play size={14} /> START
+                            </button>
+                        )}
+                    </div>
+
+                    {/* View Body */}
+                    <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900/50 custom-scrollbar transition-colors">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={viewMode}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -6 }}
+                                transition={{ duration: 0.18, ease: 'easeOut' }}
+                            >
+                                {viewMode === 'details' ? (
+                                    <div className="max-w-2xl mx-auto space-y-6">
+                                        <div className="bg-white dark:bg-slate-800/40 border dark:border-white/10 rounded-xl p-6 shadow-sm transition-colors">
+                                            <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 uppercase text-xs tracking-wider transition-colors">ECO Form Data</h3>
+                                            <div className="space-y-4">
+                                                <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">ECO Title</label><input type="text" value={title} readOnly={!isDraft} className="w-full mt-1 border-b dark:border-white/10 py-1 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 bg-transparent text-slate-900 dark:text-white transition-colors" /></div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Type</label><input type="text" value={type.toUpperCase()} readOnly className="w-full mt-1 border-b dark:border-white/10 py-1 bg-transparent text-slate-500 dark:text-slate-400 transition-colors" /></div>
+                                                    <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Target Identifier (v{targetCurrent?.version})</label><input type="text" value={targetCurrent?.name || targetCurrent?.reference || ''} readOnly className="w-full mt-1 border-b dark:border-white/10 py-1 bg-transparent text-slate-500 dark:text-slate-400 transition-colors" /></div>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-4 text-slate-800 dark:text-white transition-colors"><input type="checkbox" checked={versionUpdate} readOnly className="default:ring-2" /> <span className="text-sm font-semibold">Require Version Update upon Final Approval</span></div>
+                                            </div>
+                                        </div>
+                                        {isDraft || currentStepIndex === 1 ? <div className="text-sm text-slate-500 dark:text-slate-500 text-center italic transition-colors">Fields remain mutable until submission for formal pipeline approval.</div> : null}
                                     </div>
+                                ) : viewMode === 'edit' ? (
+                                    <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800/40 border border-blue-100 dark:border-blue-500/20 rounded-xl p-6 shadow-md shadow-blue-50 dark:shadow-none transition-colors">
+                                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 border-b dark:border-white/5 pb-2 flex items-center gap-2 transition-colors">
+                                            <Activity size={18} className="text-blue-600 dark:text-blue-400" /> Contextual Edit: Proposed Changes
+                                        </h3>
+                                        {type?.toLowerCase() === 'product' && editForm ? (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Sales Price</label><input type="number" value={editForm.price || ''} onChange={e => setEditForm({ ...editForm, price: parseFloat(e.target.value) })} className="w-full mt-1 border border-gray-300 dark:border-white/10 bg-transparent dark:bg-slate-900 text-slate-800 dark:text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" /></div>
+                                                    <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400">Cost Price</label><input type="number" value={editForm.costPrice || ''} onChange={e => setEditForm({ ...editForm, costPrice: parseFloat(e.target.value) })} className="w-full mt-1 border border-gray-300 dark:border-white/10 bg-transparent dark:bg-slate-900 text-slate-800 dark:text-white rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" /></div>
+                                                </div>
+                                                <button onClick={handleSaveContextualEdits} className="mt-6 bg-blue-600 dark:bg-indigo-600 text-white px-4 py-2 rounded-md font-bold text-sm hover:bg-blue-700 dark:hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2">
+                                                    <Save size={16} /> Save Proposed Payload
+                                                </button>
+                                            </div>
+                                        ) : type?.toLowerCase() === 'bom' && editForm ? (
+                                            <div className="space-y-6">
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 p-3 rounded-lg text-sm text-blue-800 dark:text-blue-300 mb-4 transition-colors">
+                                                    <strong>Notice:</strong> You are editing this BoM in ECO mode. Changes are saved as a proposal and will <em>not</em> modify live master data until Final Approval.
+                                                </div>
 
-                                    {/* Operations Table */}
-                                    <div>
-                                        <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2">Routing Operations</h4>
-                                        <table className="w-full text-left text-sm border border-gray-200 dark:border-white/10 rounded overflow-hidden">
-                                            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs uppercase">
-                                                <tr><th className="px-3 py-2">Operation</th><th className="px-3 py-2 w-32">Work Center</th><th className="px-3 py-2 w-24">Mins</th><th className="px-2 py-2 w-10"></th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                                                {(editForm.operations || []).map((o, idx) => (
-                                                    <tr key={idx} className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                        <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="Operation" value={o.name} onChange={e => updateBoMOperation(idx, 'name', e.target.value)} /></td>
-                                                        <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="WC" value={o.workCenter} onChange={e => updateBoMOperation(idx, 'workCenter', e.target.value)} /></td>
-                                                        <td className="px-3 py-1.5"><input type="number" className="w-full bg-transparent outline-none dark:text-white font-mono" value={o.timeMinutes} onChange={e => updateBoMOperation(idx, 'timeMinutes', Number(e.target.value))} /></td>
-                                                        <td className="px-2 py-1.5 text-center"><button onClick={() => removeBoMOperation(idx)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button></td>
-                                                    </tr>
-                                                ))}
-                                                {(editForm.operations || []).length === 0 && <tr><td colSpan="4" className="p-3 text-center text-slate-500 text-xs">No operations defined.</td></tr>}
-                                            </tbody>
-                                        </table>
-                                        <button onClick={addBoMOperation} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-xs font-bold mt-2 flex items-center gap-1"><Plus size={14} /> Add Operation</button>
+                                                {/* Components Table */}
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2">Components</h4>
+                                                    <table className="w-full text-left text-sm border border-gray-200 dark:border-white/10 rounded overflow-hidden">
+                                                        <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs uppercase">
+                                                            <tr><th className="px-3 py-2">Name</th><th className="px-3 py-2 w-24">Qty</th><th className="px-2 py-2 w-10"></th></tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                                                            {(editForm.components || []).map((c, idx) => (
+                                                                <tr key={idx} className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                                    <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="Component Name" value={c.name} onChange={e => updateBoMComponent(idx, 'name', e.target.value)} /></td>
+                                                                    <td className="px-3 py-1.5"><input type="number" className="w-full bg-transparent outline-none dark:text-white font-mono" value={c.quantity} onChange={e => updateBoMComponent(idx, 'quantity', Number(e.target.value))} /></td>
+                                                                    <td className="px-2 py-1.5 text-center"><button onClick={() => removeBoMComponent(idx)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button></td>
+                                                                </tr>
+                                                            ))}
+                                                            {(editForm.components || []).length === 0 && <tr><td colSpan="3" className="p-3 text-center text-slate-500 text-xs">No components defined.</td></tr>}
+                                                        </tbody>
+                                                    </table>
+                                                    <button onClick={addBoMComponent} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-xs font-bold mt-2 flex items-center gap-1"><Plus size={14} /> Add Component</button>
+                                                </div>
+
+                                                {/* Operations Table */}
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2">Routing Operations</h4>
+                                                    <table className="w-full text-left text-sm border border-gray-200 dark:border-white/10 rounded overflow-hidden">
+                                                        <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs uppercase">
+                                                            <tr><th className="px-3 py-2">Operation</th><th className="px-3 py-2 w-32">Work Center</th><th className="px-3 py-2 w-24">Mins</th><th className="px-2 py-2 w-10"></th></tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                                                            {(editForm.operations || []).map((o, idx) => (
+                                                                <tr key={idx} className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                                    <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="Operation" value={o.name} onChange={e => updateBoMOperation(idx, 'name', e.target.value)} /></td>
+                                                                    <td className="px-3 py-1.5"><input className="w-full bg-transparent outline-none dark:text-white" placeholder="WC" value={o.workCenter} onChange={e => updateBoMOperation(idx, 'workCenter', e.target.value)} /></td>
+                                                                    <td className="px-3 py-1.5"><input type="number" className="w-full bg-transparent outline-none dark:text-white font-mono" value={o.timeMinutes} onChange={e => updateBoMOperation(idx, 'timeMinutes', Number(e.target.value))} /></td>
+                                                                    <td className="px-2 py-1.5 text-center"><button onClick={() => removeBoMOperation(idx)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button></td>
+                                                                </tr>
+                                                            ))}
+                                                            {(editForm.operations || []).length === 0 && <tr><td colSpan="4" className="p-3 text-center text-slate-500 text-xs">No operations defined.</td></tr>}
+                                                        </tbody>
+                                                    </table>
+                                                    <button onClick={addBoMOperation} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-xs font-bold mt-2 flex items-center gap-1"><Plus size={14} /> Add Operation</button>
+                                                </div>
+
+                                                <button onClick={handleSaveContextualEdits} className="mt-6 w-full bg-blue-600 dark:bg-indigo-600 text-white px-4 py-2.5 rounded-md font-bold text-sm hover:bg-blue-700 dark:hover:bg-indigo-700 shadow-sm transition-colors flex items-center justify-center gap-2">
+                                                    <Save size={16} /> Save Proposed Payload to ECO
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </div>
+                                ) : (
+                                    <div className="max-w-3xl mx-auto">
+                                        {renderComparison()}
+                                        {renderImpactSummary()}
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
 
-                                    <button onClick={handleSaveContextualEdits} className="mt-6 w-full bg-blue-600 dark:bg-indigo-600 text-white px-4 py-2.5 rounded-md font-bold text-sm hover:bg-blue-700 dark:hover:bg-indigo-700 shadow-sm transition-colors flex items-center justify-center gap-2">
-                                        <Save size={16} /> Save Proposed Payload to ECO
-                                    </button>
-                                </div>
-                            ) : null}
-                        </div>
-                    ) : (
-                        <div className="max-w-3xl mx-auto">
-                            {renderComparison()}
-                            {renderImpactSummary()}
-                        </div>
-                    )}
-                </div>
-
-            </div>
-        </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 

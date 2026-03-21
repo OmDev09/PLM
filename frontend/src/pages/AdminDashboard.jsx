@@ -9,6 +9,7 @@ import ECOResport from '../components/ECOResport';
 import DashboardOverview from '../components/DashboardOverview';
 import BoMList from '../components/BoMList';
 import Settings from './Settings';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
@@ -151,6 +152,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <ThemeToggle />
+                        <NotificationDropdown />
 
                         <div className="relative cursor-pointer" onMouseEnter={() => setProfileOpen(true)} onMouseLeave={() => setProfileOpen(false)}>
                             <div className="flex items-center gap-3">
