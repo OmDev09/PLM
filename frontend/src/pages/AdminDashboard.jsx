@@ -10,6 +10,8 @@ import DashboardOverview from '../components/DashboardOverview';
 import BoMList from '../components/BoMList';
 import Settings from './Settings';
 import NotificationDropdown from '../components/NotificationDropdown';
+import AuditReport from '../components/AuditReport';
+import { ShieldCheck } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
@@ -30,6 +32,7 @@ const AdminDashboard = () => {
             case 'products': return <ProductList />;
             case 'boms': return <BoMList />;
             case 'reporting': return <ECOResport />;
+            case 'audit': return <AuditReport />;
             case 'settings': return <Settings />;
             default: return <DashboardOverview setActiveMenu={setActiveMenu} />;
         }
@@ -41,6 +44,7 @@ const AdminDashboard = () => {
         'products': 'Master Data / Products',
         'boms': 'Master Data / Bills of Materials',
         'reporting': 'System Reporting',
+        'audit': 'Audit Trail & Traceability',
         'settings': 'Workflow Graph & Pipeline Configuration'
     }[activeMenu] || 'System Overview';
 
@@ -108,6 +112,7 @@ const AdminDashboard = () => {
                         {renderNavLink('dashboard', <Activity />, 'System Overview')}
                         {renderNavLink('ecos', <FileText />, 'Engineering Change Orders')}
                         {renderNavLink('reporting', <Activity />, 'Reporting')}
+                        {renderNavLink('audit', <ShieldCheck />, 'Audit Trail')}
 
                         {renderSectionLabel('Data')}
                         <div>

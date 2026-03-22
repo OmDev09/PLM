@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Search, X, Pickaxe, Trash2, Box } from 'lucide-react';
+import { Plus, Search, X, Trash2, Archive, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const StatusBadge = ({ status }) =>
+    status === 'active'
+        ? <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Active
+        </span>
+        : <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
+            <Archive size={10} />Archived
+        </span>;
 
 const BoMList = () => {
     const { user } = useAuth();
     const [boms, setBoms] = useState([]);
     const [activeProducts, setActiveProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
     const [viewRoute, setViewRoute] = useState('list'); // 'list' | 'create' | 'detail'
     const [selectedBom, setSelectedBom] = useState(null);
 
@@ -43,18 +54,26 @@ const BoMList = () => {
     const updateOperation = (idx, field, val) => { const newO = [...formData.operations]; newO[idx][field] = val; setFormData({ ...formData, operations: newO }); };
     const removeOperation = (idx) => setFormData({ ...formData, operations: formData.operations.filter((_, i) => i !== idx) });
 
-    const filteredBoms = boms.filter(b => {
-        if (user?.role === 'Operations' && b.status !== 'active') return false;
-        return b.reference?.toLowerCase().includes(searchQuery.toLowerCase()) || b.productId?.name.toLowerCase().includes(searchQuery.toLowerCase());
-    });
+    const filteredBoms = boms
+        .filter(b => {
+            if (!showArchived && b.status !== 'active') return false;
+            if (user?.role === 'Operations' && b.status !== 'active') return false;
+            const q = searchQuery.toLowerCase();
+            return b.reference?.toLowerCase().includes(q) || b.productId?.name?.toLowerCase().includes(q);
+        })
+        .sort((a, b) => {
+            if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
+            return b.version - a.version;
+        });
 
     const renderForm = () => {
         const isDetail = viewRoute === 'detail';
+        const isArchived = isDetail && selectedBom?.status === 'archived';
         const data = isDetail ? selectedBom : formData;
 
         return (
             <div className="p-8 max-w-5xl mx-auto flex flex-col h-[calc(100vh-64px)] transition-colors duration-300">
-                <div className="flex items-center gap-4 mb-6 shrink-0">
+                <div className="flex items-center gap-4 mb-4 shrink-0">
                     <button onClick={() => setViewRoute('list')} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 shadow-sm transition-colors">
                         <X size={16} /> Back
                     </button>
@@ -65,12 +84,25 @@ const BoMList = () => {
                     )}
                 </div>
 
+                {/* Archived read-only banner */}
+                <AnimatePresence>
+                    {isArchived && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            className="mb-4 flex items-center gap-3 px-5 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-400 text-sm font-semibold shrink-0"
+                        >
+                            <Archive size={16} />
+                            Read Only (Archived) — This BoM version has been superseded by a newer ECO-approved revision. It cannot be edited or used in new operations.
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <div className="bg-white dark:bg-transparent border border-gray-200 dark:border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col lg:flex-row flex-1 transition-colors">
                     {/* Left: Metadata */}
                     <div className="w-full lg:w-1/3 bg-slate-50 dark:bg-slate-900/60 dark:backdrop-blur-xl border-r border-gray-100 dark:border-white/5 p-6 sm:p-8 space-y-6 overflow-y-auto transition-colors">
                         <div>
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{isDetail ? 'BoM Details' : 'New Bill of Materials'}</h2>
-                            {isDetail && <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${data.status === 'active' ? 'bg-green-100 dark:bg-emerald-500/20 text-green-800 dark:text-emerald-400 border-green-200 dark:border-emerald-500/30' : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700'} border mb-6 inline-block transition-colors`}>{data.status}</span>}
+                            {isDetail && <div className="mb-4"><StatusBadge status={data.status} /></div>}
                         </div>
 
                         <div className="space-y-1.5">
@@ -177,36 +209,80 @@ const BoMList = () => {
             </div>
 
             <div className="bg-white dark:bg-slate-900/40 dark:backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden transition-colors">
-                <div className="p-4 border-b border-gray-100 dark:border-white/5 flex gap-4 shrink-0 transition-colors">
+                {/* Toolbar */}
+                <div className="p-4 border-b border-gray-100 dark:border-white/5 flex items-center gap-4 shrink-0">
                     <div className="relative max-w-sm w-full">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                        <input type="text" placeholder="Search BoMs..." className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-white/10 rounded-md text-sm outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-500/20 focus:border-slate-400 dark:focus:border-slate-500 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 transition-all shadow-sm" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                        <input type="text" placeholder="Search BoMs..." className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800/50 border border-gray-300 dark:border-white/10 rounded-md text-sm outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-500/20 text-slate-900 dark:text-white placeholder-slate-400 transition-all shadow-sm" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                     </div>
+
+                    {user?.role !== 'Operations' && (
+                        <button
+                            onClick={() => setShowArchived(!showArchived)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-all duration-200 ${showArchived
+                                    ? 'bg-slate-800 dark:bg-slate-700 text-white border-slate-700 shadow-inner'
+                                    : 'bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-gray-300 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <Archive size={14} />
+                            {showArchived ? 'Hiding Archived' : 'Show Archived'}
+                        </button>
+                    )}
+                    {showArchived && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-1.5 rounded-full">
+                            Showing all versions including archived
+                        </span>
+                    )}
                 </div>
 
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-semibold border-b border-gray-200 dark:border-white/10 sticky top-0 z-10 transition-colors">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-semibold border-b border-gray-200 dark:border-white/10 sticky top-0 z-10">
                             <tr>
                                 <th className="px-6 py-4">Linked Product</th>
                                 <th className="px-6 py-4">Reference ID</th>
+                                <th className="px-6 py-4">Version</th>
                                 <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4 text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-white/5 transition-colors">
-                            {filteredBoms.map(bom => (
-                                <tr key={bom._id} onClick={() => { setSelectedBom(bom); setViewRoute('detail'); }} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group ${bom.status === 'archived' ? 'opacity-60 bg-gray-50/50 dark:bg-slate-900/50' : ''}`}>
-                                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400">{bom.productId?.name} <span className="text-gray-400 dark:text-slate-500 font-normal ml-2 text-xs">v{bom.productId?.version}</span></td>
-                                    <td className="px-6 py-4 font-mono text-slate-800 dark:text-slate-300">{bom.reference}</td>
-                                    <td className="px-6 py-4">
-                                        {bom.status === 'active'
-                                            ? <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-green-50 dark:bg-emerald-500/10 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-500/20 transition-colors">Active</span>
-                                            : <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold border bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 transition-colors">Archived</span>
-                                        }
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredBoms.length === 0 && (<tr><td colSpan="3" className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No BoMs Available</td></tr>)}
+                        <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                            <AnimatePresence initial={false}>
+                                {filteredBoms.map(bom => (
+                                    <motion.tr
+                                        key={bom._id}
+                                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group ${bom.status === 'archived' ? 'opacity-55' : ''}`}
+                                        onClick={() => { setSelectedBom(bom); setViewRoute('detail'); }}
+                                    >
+                                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400">
+                                            {bom.productId?.name}
+                                        </td>
+                                        <td className="px-6 py-4 font-mono text-slate-700 dark:text-slate-300">{bom.reference}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                                v{bom.version}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4"><StatusBadge status={bom.status} /></td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={e => { e.stopPropagation(); setSelectedBom(bom); setViewRoute('detail'); }}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/20"
+                                            >
+                                                <Eye size={13} />
+                                                {bom.status === 'archived' ? 'View (Read Only)' : 'View'}
+                                            </button>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </AnimatePresence>
+                            {filteredBoms.length === 0 && (
+                                <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                                    {showArchived ? 'No BoMs found.' : 'No active BoMs found. Toggle "Show Archived" to see all versions.'}
+                                </td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

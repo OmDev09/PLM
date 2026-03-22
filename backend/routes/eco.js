@@ -114,6 +114,8 @@ const executeFinalization = async (eco, session) => {
             await product.save({ session });
             const newProduct = new Product({ ...oldData, version: product.version + 1, status: 'active', previousVersionId: product._id, ...safeChanges });
             await newProduct.save({ session });
+            // Audit: product versioned
+            await new AuditLog({ action: 'PRODUCT_VERSIONED', entityId: newProduct._id, oldValue: { version: product.version, status: 'archived', _id: product._id }, newValue: { version: newProduct.version, status: 'active', _id: newProduct._id }, user: eco.createdBy }).save({ session });
         } else {
             Object.assign(product, safeChanges);
             await product.save({ session });
@@ -133,6 +135,8 @@ const executeFinalization = async (eco, session) => {
             await bom.save({ session });
             const newBom = new BoM({ ...oldData, version: bom.version + 1, status: 'active', previousVersionId: bom._id, components: safeChanges.components || oldData.components, operations: safeChanges.operations || oldData.operations, ...safeChanges });
             await newBom.save({ session });
+            // Audit: BoM versioned
+            await new AuditLog({ action: 'BOM_VERSIONED', entityId: newBom._id, oldValue: { version: bom.version, status: 'archived', reference: bom.reference }, newValue: { version: newBom.version, status: 'active', reference: newBom.reference }, user: eco.createdBy }).save({ session });
         } else {
             if (safeChanges.components) bom.components = safeChanges.components;
             if (safeChanges.operations) bom.operations = safeChanges.operations;
@@ -158,6 +162,7 @@ router.post('/:id/start', auth, async (req, res) => {
         eco.stage = newStage._id;
         eco.status = 'Active';
         await eco.save();
+        await new AuditLog({ action: 'ECO_STAGE_TRANSITION', entityId: eco._id, oldValue: { stage: 'Draft' }, newValue: { stage: newStage.name, status: 'Active' }, user: req.user.id }).save();
         res.json(await ECO.findById(eco._id).populate('stage'));
     } catch (err) {
         res.status(500).json({ msg: err.message || 'Server Error' });
@@ -176,8 +181,10 @@ router.post('/:id/send-approval', auth, async (req, res) => {
         const nextStage = await EcoStage.findOne({ sequence: { $gt: currentSeq } }).sort({ sequence: 1 });
         if (!nextStage) return res.status(400).json({ msg: 'Workflow not configured for next stage.' });
 
+        const prevStageName = eco.stage?.name || 'Unknown';
         eco.stage = nextStage._id;
         await eco.save();
+        await new AuditLog({ action: 'ECO_STAGE_TRANSITION', entityId: eco._id, oldValue: { stage: prevStageName }, newValue: { stage: nextStage.name }, user: req.user.id }).save();
         res.json(await ECO.findById(eco._id).populate('stage'));
     } catch (err) {
         res.status(500).json({ msg: err.message || 'Server Error' });
@@ -210,6 +217,8 @@ router.post('/:id/approve', auth, async (req, res) => {
         }
 
         await eco.save({ session });
+        // Audit: approval action
+        await new AuditLog({ action: 'ECO_APPROVAL_ACTION', entityId: eco._id, oldValue: { status: 'Active' }, newValue: { status: eco.status, stage: nextStage?.name || 'Final' }, user: req.user.id }).save({ session });
         await session.commitTransaction();
         session.endSession();
         res.json(await ECO.findById(eco._id).populate('stage'));

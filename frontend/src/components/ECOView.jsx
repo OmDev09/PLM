@@ -324,11 +324,11 @@ const ECOView = ({ ecoId, onClose, refreshList, readOnlyReport = false }) => {
                     {/* Header Card */}
                     <div className="bg-white dark:bg-slate-900/60 border-b dark:border-white/10 px-6 py-4 flex items-center justify-between shrink-0 transition-colors">
                         <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors">{title}</h2>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white transition-colors mb-1">{title}</h2>
+                            <div className="flex items-center gap-3">
+                                <p className="text-sm text-slate-500 dark:text-slate-400 transition-colors">Target Type: <span className="uppercase font-semibold text-slate-700 dark:text-slate-300">{type}</span></p>
                                 <RiskBadge level={riskLevel} />
                             </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors">Target Type: <span className="uppercase font-semibold text-slate-700 dark:text-slate-300">{type}</span></p>
                         </div>
 
                         {/* Visual Stepper */}

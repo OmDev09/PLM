@@ -61,4 +61,21 @@ router.get('/archived', auth([]), async (req, res) => {
     }
 });
 
+// @route   GET api/products/all
+// @desc    Get ALL products (active + archived) - for version lifecycle UI
+//          Sorted: active first, then by name asc, then version desc
+router.get('/all', auth([]), async (req, res) => {
+    try {
+        const products = await Product.find().sort({ name: 1, version: -1 });
+        // Put active on top within same name group
+        const sorted = [
+            ...products.filter(p => p.status === 'active'),
+            ...products.filter(p => p.status === 'archived'),
+        ];
+        res.json(sorted);
+    } catch (err) {
+        res.status(500).json({ msg: err.message });
+    }
+});
+
 module.exports = router;
